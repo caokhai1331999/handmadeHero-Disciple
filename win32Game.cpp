@@ -41,7 +41,7 @@ X_INPUT_GET_STATE(XinputGetStateStub){
 global_variable x_input_get_state* XinputGetState_  = XinputGetStateStub;
 // So finally we have a pointer name XinputGetState point to the function
 // XinputGetStateStub(DWORD ....) which basically X_INPUT_GET_STATE() function
-#define XinputGetState XinputGetState_
+#define XInputGetState XinputGetState_
 // This one is to replace the XinputGetState which already been called in Xinput.h
 // with the XinputGetState
 
@@ -51,7 +51,7 @@ X_INPUT_SET_STATE(XinputSetStateStub){
     return (0);
 }
 global_variable x_input_set_state* XinputSetState_  = XinputSetStateStub;
-#define XinputSetState XinputSetState_
+#define XInputSetState XinputSetState_
 
 internal void
 win32LoadXInput(void){
@@ -66,6 +66,7 @@ global_variable bool  Running;
 global_variable HWND Window;
 global_variable RECT ClientRect;
 global_variable HDC DeviceContext;
+global_variable int  XOffset{0}, YOffset{0};
 
 const global_variable int Height{720};
 const global_variable int Width{1280};
@@ -200,8 +201,48 @@ LRESULT CALLBACK MainWindowCallBack(
             OutputDebugStringA("WM_CLOSE\n");
         }break;
 
-        case WM_ACTIVATEAPP:
+        case WM_KEYDOWN:
         {
+            
+            OutputDebugStringA("WM_KEYDOWN\n");            
+        }break;
+
+        case WM_KEYUP:
+        {
+            uint32 vkCode = Wparam;
+            // NOTE: This is whether bit 30 or 0 (never 1).
+            // So if it is bit 30 it is down 
+            bool WasDown = (LParam &(1 << 30) != 0);
+            bool IsDown = (LParam &(1 << 31) == 0);
+            
+            // if(vkCode == VK_ESCAPE){
+            //     if(isFullScreen){
+            //         GoPartialScreen();
+            //     }
+            // }
+
+            if(vkCode == VK_UP){
+                YOffset -= 10;
+            }
+
+            if(vkCode == VK_DOWN){
+                YOffset += 10;
+            }
+
+            if(vkCode == VK_LEFT){
+                if (XOffset != 0){
+                    XOffset = 0;
+                }
+                XOffset -= 10;
+            }
+
+            if(vkCode == VK_RIGHT){
+                if (XOffset != 0){
+                    XOffset = 0;
+                }                
+                YOffset += 10;
+            }
+            
             OutputDebugStringA("WM_ACTIVATEAPP\n");            
         }break;
 
@@ -281,7 +322,6 @@ int CALLBACK WinMain
         
         if(Window){
             Running = true;
-            int XOffset{0}, YOffset{0};
             while(Running){
                 MSG Message;
                 while(PeekMessageA(&Message, 0, 0, 0, PM_REMOVE)){
@@ -294,14 +334,10 @@ int CALLBACK WinMain
                 
                 // NOTE: The update window function must afoot outside the getting
                 // message block and inside the running block
-                for(DWORD DeviceIndex{0}; ControllerIndex < XUSER_MAX_COUNT;
-                    ControllerIndex++)
+                for(DWORD DeviceIndex{0}; DeviceIndex < XUSER_MAX_COUNT;
+                    DeviceIndex++)
                 {
                     XINPUT_STATE ControllerState;
-                    XINPUT_KEYSTROKE* KeyBoard;
-                    if(XInputGetKeystroke(ControllerIndex, Reserved, KeyBoard) == ERROR_SUCCESS){
-                        bool KUp = (KeyBoard-> VirtualKey &)    
-                    }
                     
                     if(XinputGetState_(DeviceIndex, &ControllerState) == ERROR_SUCCESS){
                         // NOTE: The controller is plugged in
@@ -335,7 +371,10 @@ int CALLBACK WinMain
                     };
                     
                 }
-                
+                XINPUT_VIBRATION Vibration;
+                Vibration.wLeftMotorSpeed = 350;
+                Vibration.wRightMotorSpeed = 350;
+                XinputSetState(0, &Vibration);
                 RenderSplendidGradient(&BackBuffer, XOffset, YOffset);
                 DeviceContext = GetDC(Window);
 
