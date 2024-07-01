@@ -45,7 +45,7 @@ global_variable x_input_get_state* XinputGetState_  = XinputGetStateStub;
 // This one is to replace the XinputGetState which already been called in Xinput.h
 // with the XinputGetState
 
-#define X_INPUT_SET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex,XINPUT_STATE *pState)
+#define X_INPUT_SET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex,XINPUT_VIBRATION *pVibration)
 typedef X_INPUT_SET_STATE(x_input_set_state);
 X_INPUT_SET_STATE(XinputSetStateStub){
     return (0);
@@ -202,9 +202,22 @@ LRESULT CALLBACK MainWindowCallBack(
         }break;
 
         case WM_KEYDOWN:
-        {
-            
-            OutputDebugStringA("WM_KEYDOWN\n");            
+        {            
+            bool IsDown = ((Lparam &(1 << 31)) == 0);
+            if (IsDown){
+                OutputDebugStringA("Some button is down");
+            }
+            // OutputDebugStringA("WM_KEYDOWN\n");            
+        }break;
+
+        case WM_SYSKEYDOWN:
+        {            
+            OutputDebugStringA("WM_SYSKEYDOWN\n");            
+        }break;
+
+        case WM_SYSKEYUP:
+        {            
+            OutputDebugStringA("WM_SYSKEYUP\n");            
         }break;
 
         case WM_KEYUP:
@@ -212,38 +225,36 @@ LRESULT CALLBACK MainWindowCallBack(
             uint32 vkCode = Wparam;
             // NOTE: This is whether bit 30 or 0 (never 1).
             // So if it is bit 30 it is down 
-            bool WasDown = (LParam &(1 << 30) != 0);
-            bool IsDown = (LParam &(1 << 31) == 0);
+            bool WasDown = ((Lparam &(1 << 30)) != 0);
+            bool IsDown = ((Lparam &(1 << 31)) == 0);
             
-            // if(vkCode == VK_ESCAPE){
-            //     if(isFullScreen){
-            //         GoPartialScreen();
-            //     }
-            // }
+            if (WasDown != IsDown){
 
-            if(vkCode == VK_UP){
-                YOffset -= 10;
-            }
-
-            if(vkCode == VK_DOWN){
-                YOffset += 10;
-            }
-
-            if(vkCode == VK_LEFT){
-                if (XOffset != 0){
-                    XOffset = 0;
+                if(vkCode == VK_UP){
+                    YOffset -= 10;
                 }
-                XOffset -= 10;
-            }
 
-            if(vkCode == VK_RIGHT){
-                if (XOffset != 0){
-                    XOffset = 0;
+                else if(vkCode == VK_DOWN){
+                    YOffset += 10;
+                }
+
+                else if(vkCode == VK_LEFT){
+                    OutputDebugStringA("Left Button:");
+                    if(IsDown){                    
+                        OutputDebugStringA(" IsDown");
+                    }
+
+                    else if(WasDown){                    
+                        OutputDebugStringA(" WasDown");
+                    }
+                    OutputDebugStringA("\n");
+                    XOffset -= 10;
+                }
+
+                else if(vkCode == VK_RIGHT){
+                    XOffset += 10;
                 }                
-                YOffset += 10;
             }
-            
-            OutputDebugStringA("WM_ACTIVATEAPP\n");            
         }break;
 
         case WM_DESTROY:
@@ -361,10 +372,10 @@ int CALLBACK WinMain
                         int16 StickX = Pad->sThumbLX;
                         int16 StickY = Pad->sThumbLY;
 
-                        if (Up){
-                            YOffset -= 4;
-                            OutputDebugStringA("Control Pad Up button triggered\n");
-                        }
+                        // if (Up){
+                        //     YOffset -= 4;
+                        //     OutputDebugStringA("Control Pad Up button triggered\n");
+                        // }
                         
                     } else {
                         // NOTE: The controller is not available
@@ -374,7 +385,7 @@ int CALLBACK WinMain
                 XINPUT_VIBRATION Vibration;
                 Vibration.wLeftMotorSpeed = 350;
                 Vibration.wRightMotorSpeed = 350;
-                XinputSetState(0, &Vibration);
+                XInputSetState(0, &Vibration);
                 RenderSplendidGradient(&BackBuffer, XOffset, YOffset);
                 DeviceContext = GetDC(Window);
 
@@ -384,8 +395,10 @@ int CALLBACK WinMain
                 ReleaseDC(Window, DeviceContext);
                 // TODO: Somehow the function didn't receive the increase offset var
                 // to create the animation and somehow there is only one color that is blue
-                    
-                XOffset++;
+                if(Message.message != WM_KEYDOWN && Message.message != WM_KEYUP)
+                {
+                    XOffset++;
+                }
             }
         }else{
             // TODO: Logging
