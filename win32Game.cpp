@@ -204,10 +204,10 @@ LRESULT CALLBACK MainWindowCallBack(
         case WM_KEYDOWN:
         {            
             bool IsDown = ((Lparam &(1 << 31)) == 0);
-            if (IsDown){
-                OutputDebugStringA("Some button is down");
+            if(IsDown)
+            {
+                OutputDebugStringA("Some Key is down\n");
             }
-            // OutputDebugStringA("WM_KEYDOWN\n");            
         }break;
 
         case WM_SYSKEYDOWN:
@@ -239,16 +239,16 @@ LRESULT CALLBACK MainWindowCallBack(
                 }
 
                 else if(vkCode == VK_LEFT){
-                    OutputDebugStringA("Left Button:");
+                    XOffset -= 10;
+                    OutputDebugStringA("Left Button :");
                     if(IsDown){                    
-                        OutputDebugStringA(" IsDown");
+                        OutputDebugStringA(" Is Down");
                     }
 
-                    else if(WasDown){                    
-                        OutputDebugStringA(" WasDown");
+                    if(WasDown){                    
+                        OutputDebugStringA(" Was Down");
                     }
                     OutputDebugStringA("\n");
-                    XOffset -= 10;
                 }
 
                 else if(vkCode == VK_RIGHT){
