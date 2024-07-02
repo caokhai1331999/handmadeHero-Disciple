@@ -153,7 +153,7 @@ internal void Win32ResizeDIBSection(Win32_Offscreen_Buffer* OBuffer, int Width, 
 // NOTE: Keep in mind that try to all what you need to release back to memory
 // in a total thing so that I can release it in aggregate
 
-internal void Win32DisplayBufferWindow(HDC DeviceContext, RECT* ClientRect, Win32_Offscreen_Buffer OBuffer, int X, int Y, int Width, int Height){
+internal void Win32DisplayBufferWindow(HDC DeviceContext, RECT* ClientRect, Win32_Offscreen_Buffer* OBuffer, int X, int Y, int Width, int Height){
     // the Source and the Destination rectangle means
     
     int WindowWidth = ClientRect->right - ClientRect->left;
@@ -161,11 +161,11 @@ internal void Win32DisplayBufferWindow(HDC DeviceContext, RECT* ClientRect, Win3
     
     StretchDIBits(
         DeviceContext,
-        0,0,OBuffer.BitmapWidth, OBuffer.BitmapHeight, // Source rectangle
+        0,0,OBuffer->BitmapWidth, OBuffer->BitmapHeight, // Source rectangle
         0,0,WindowWidth, WindowHeight,                 // Destination Rectangle
         // const VOID* lpBits,
-        OBuffer.BitmapMemory,
-        &OBuffer.Bitmapinfo,
+        OBuffer->BitmapMemory,
+        &OBuffer->Bitmapinfo,
         DIB_RGB_COLORS,
         SRCCOPY
                   );    
@@ -191,7 +191,7 @@ LRESULT CALLBACK MainWindowCallBack(
             // of the new window and update a new proper DIB for that
             // DIB is a table where store BIT color infor
             Win32ResizeDIBSection(&BackBuffer, Dimens.Width, Dimens.Height);
-            Win32DisplayBufferWindow(DeviceContext, &ClientRect, BackBuffer, 0,0, Dimens.Width, Dimens.Height);
+            Win32DisplayBufferWindow(DeviceContext, &ClientRect, &BackBuffer, 0,0, Dimens.Width, Dimens.Height);
             OutputDebugStringA("WM_SIZE\n");
         }break;
         
@@ -204,10 +204,15 @@ LRESULT CALLBACK MainWindowCallBack(
         case WM_KEYDOWN:
         {            
             bool IsDown = ((Lparam &(1 << 31)) == 0);
-            if(IsDown)
-            {
-                OutputDebugStringA("Some Key is down\n");
-            }
+            uint32 vkCode = Wparam;
+                 if(vkCode == VK_LEFT){
+                
+                    OutputDebugStringA("Left Button :");
+                    if(IsDown){                    
+                        OutputDebugStringA(" Is Down");
+                    }
+                    OutputDebugStringA("\n");
+                }            
         }break;
 
         case WM_SYSKEYDOWN:
@@ -226,8 +231,7 @@ LRESULT CALLBACK MainWindowCallBack(
             // NOTE: This is whether bit 30 or 0 (never 1).
             // So if it is bit 30 it is down 
             bool WasDown = ((Lparam &(1 << 30)) != 0);
-            bool IsDown = ((Lparam &(1 << 31)) == 0);
-            
+            bool IsDown = ((Lparam &(1 << 31)) == 0);            
             if (WasDown != IsDown){
 
                 if(vkCode == VK_UP){
@@ -241,10 +245,6 @@ LRESULT CALLBACK MainWindowCallBack(
                 else if(vkCode == VK_LEFT){
                     XOffset -= 10;
                     OutputDebugStringA("Left Button :");
-                    if(IsDown){                    
-                        OutputDebugStringA(" Is Down");
-                    }
-
                     if(WasDown){                    
                         OutputDebugStringA(" Was Down");
                     }
@@ -285,7 +285,7 @@ LRESULT CALLBACK MainWindowCallBack(
             //     Operation = WHITENESS;
             // }
             
-            Win32DisplayBufferWindow(DeviceContext, &ClientRect, BackBuffer, X, Y, width, height);
+            Win32DisplayBufferWindow(DeviceContext, &ClientRect, &BackBuffer, X, Y, width, height);
             EndPaint(Window, &Paint);
             OutputDebugStringA("WM_PAINT\n");
         }break;
@@ -391,7 +391,7 @@ int CALLBACK WinMain
 
                 GetWindowDimension(Window);
                     
-                Win32DisplayBufferWindow(DeviceContext, &ClientRect, BackBuffer, 0, 0, Dimens.Width, Dimens.Height);
+                Win32DisplayBufferWindow(DeviceContext, &ClientRect, &BackBuffer, 0, 0, Dimens.Width, Dimens.Height);
                 ReleaseDC(Window, DeviceContext);
                 // TODO: Somehow the function didn't receive the increase offset var
                 // to create the animation and somehow there is only one color that is blue
