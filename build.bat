@@ -1,10 +1,11 @@
 mkdir build
 pushd build
 
+rem remember to add these to use address sanitizer /EHsc /fsanitize=address
 @echo off
 
 for %%f in (..\*.cpp ..\*.h) do (
-    cl /FC /Zi /EHsc /fsanitize=address -Fe:"win32Game" %%f -link user32.lib gdi32.lib
+    cl /FC /Zi -Fe:"win32Game" %%f -link user32.lib gdi32.lib
  )
 
 if %ERRORLEVEL% EQU 0 (

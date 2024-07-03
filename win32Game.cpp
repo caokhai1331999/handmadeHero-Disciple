@@ -34,31 +34,39 @@ typedef X_INPUT_GET_STATE(x_input_get_state);
 // And to DECLARE A FUNCTION SIGNATURE AS A TYPE
 // for example: x_input_get_state _XinputgetState()
 X_INPUT_GET_STATE(XinputGetStateStub){
-    return (0);
+    return (ERROR_DEVICE_NOT_CONNECTED);
 }
 // NOTE: But the rules of C does not allow this(x_input_get_state _XinputGetStateStub(){//do something;})
 // so we use this for function pointer
 global_variable x_input_get_state* XinputGetState_  = XinputGetStateStub;
 // So finally we have a pointer name XinputGetState point to the function
 // XinputGetStateStub(DWORD ....) which basically X_INPUT_GET_STATE() function
-#define XInputGetState XinputGetState_
+#define XinputGetState XinputGetState_
 // This one is to replace the XinputGetState which already been called in Xinput.h
 // with the XinputGetState
 
 #define X_INPUT_SET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex,XINPUT_VIBRATION *pVibration)
 typedef X_INPUT_SET_STATE(x_input_set_state);
 X_INPUT_SET_STATE(XinputSetStateStub){
-    return (0);
+    return (ERROR_DEVICE_NOT_CONNECTED);
 }
 global_variable x_input_set_state* XinputSetState_  = XinputSetStateStub;
-#define XInputSetState XinputSetState_
+#define XinputSetState XinputSetState_
 
 internal void
 win32LoadXInput(void){
-    HMODULE XInputLibrary = LoadLibrary("xinput1_3.dll");
+    HMODULE XInputLibrary = LoadLibrary("xinput1_4.dll");
+    if (!XInputLibrary){
+        XInputLibrary = LoadLibrary("xinput1_3.dll");
+    }
+    // somehow it couldn't find the dll file maybe due to the function or
+    // it's just not there therefore I used xinput1_4.dll instead
     if(XInputLibrary){
-        XInputGetState = (x_input_get_state *)GetProcAddress(XInputLibrary, "XinputGetState");
-        XInputSetState = (x_input_set_state *)GetProcAddress(XInputLibrary, "XinputSetState");
+        // retrieve the address of the exported function in dll file
+        XinputGetState = (x_input_get_state *)GetProcAddress(XInputLibrary, "XInputGetState");
+        if (!XinputGetState){XinputGetState = XinputGetStateStub;}
+        XinputSetState = (x_input_set_state *)GetProcAddress(XInputLibrary, "XInputSetState");
+        if (!XinputSetState){XinputSetState = XinputSetStateStub;}
     }
 }
 
@@ -153,12 +161,9 @@ internal void Win32ResizeDIBSection(Win32_Offscreen_Buffer* OBuffer, int Width, 
 // NOTE: Keep in mind that try to all what you need to release back to memory
 // in a total thing so that I can release it in aggregate
 
-internal void Win32DisplayBufferWindow(HDC DeviceContext, RECT* ClientRect, Win32_Offscreen_Buffer* OBuffer, int X, int Y, int Width, int Height){
+internal void Win32DisplayBufferWindow(HDC DeviceContext, int WindowWidth, int WindowHeight, Win32_Offscreen_Buffer* OBuffer ){
     // the Source and the Destination rectangle means
-    
-    int WindowWidth = ClientRect->right - ClientRect->left;
-    int WindowHeight = ClientRect->bottom - ClientRect->top;
-    
+        
     StretchDIBits(
         DeviceContext,
         0,0,OBuffer->BitmapWidth, OBuffer->BitmapHeight, // Source rectangle
@@ -191,7 +196,7 @@ LRESULT CALLBACK MainWindowCallBack(
             // of the new window and update a new proper DIB for that
             // DIB is a table where store BIT color infor
             Win32ResizeDIBSection(&BackBuffer, Dimens.Width, Dimens.Height);
-            Win32DisplayBufferWindow(DeviceContext, &ClientRect, &BackBuffer, 0,0, Dimens.Width, Dimens.Height);
+            Win32DisplayBufferWindow(DeviceContext, Dimens.Width, Dimens.Height,  &BackBuffer);
             OutputDebugStringA("WM_SIZE\n");
         }break;
         
@@ -216,7 +221,12 @@ LRESULT CALLBACK MainWindowCallBack(
         }break;
 
         case WM_SYSKEYDOWN:
-        {            
+        {
+            uint32 vkCode = Wparam;
+            bool AltkeyisDown = ((Lparam &(1 << 29)) != 0);
+            if((vkCode == VK_F4) && AltkeyisDown){
+                Running = false;
+            }                                        
             OutputDebugStringA("WM_SYSKEYDOWN\n");            
         }break;
 
@@ -253,7 +263,7 @@ LRESULT CALLBACK MainWindowCallBack(
 
                 else if(vkCode == VK_RIGHT){
                     XOffset += 10;
-                }                
+                }
             }
         }break;
 
@@ -270,11 +280,11 @@ LRESULT CALLBACK MainWindowCallBack(
             PAINTSTRUCT Paint;
             DeviceContext = BeginPaint(Window, &Paint);
 
-            int X = Paint.rcPaint.left;
-            int Y = Paint.rcPaint.top;
+            // int X = Paint.rcPaint.left;
+            // int Y = Paint.rcPaint.top;
             
-            int width = Paint.rcPaint.right - Paint.rcPaint.left;
-            int height = Paint.rcPaint.bottom - Paint.rcPaint.top;
+            // int width = Paint.rcPaint.right - Paint.rcPaint.left;
+            // int height = Paint.rcPaint.bottom - Paint.rcPaint.top;
 
             GetWindowDimension(Window);
             // local_persist DWORD Operation = WHITENESS;
@@ -285,7 +295,7 @@ LRESULT CALLBACK MainWindowCallBack(
             //     Operation = WHITENESS;
             // }
             
-            Win32DisplayBufferWindow(DeviceContext, &ClientRect, &BackBuffer, X, Y, width, height);
+            Win32DisplayBufferWindow(DeviceContext,Dimens.Width, Dimens.Height, &BackBuffer);
             EndPaint(Window, &Paint);
             OutputDebugStringA("WM_PAINT\n");
         }break;
@@ -305,10 +315,10 @@ int CALLBACK WinMain
  PSTR cmdline,
  int cmdshow)
 {
+    win32LoadXInput();
     WNDCLASSA WindowClass = {};
     // NOTE: This is where receiving the message to change
     // for any change in window
-
     WindowClass.lpfnWndProc = MainWindowCallBack;
     WindowClass.hInstance = Instance;
     WindowClass.lpszClassName = "First Game Window Class";
@@ -350,7 +360,7 @@ int CALLBACK WinMain
                 {
                     XINPUT_STATE ControllerState;
                     
-                    if(XinputGetState_(DeviceIndex, &ControllerState) == ERROR_SUCCESS){
+                    if(XinputGetState(DeviceIndex, &ControllerState) == ERROR_SUCCESS){
                         // NOTE: The controller is plugged in
                         XINPUT_GAMEPAD* Pad = &ControllerState.Gamepad;
                                                
@@ -372,6 +382,8 @@ int CALLBACK WinMain
                         int16 StickX = Pad->sThumbLX;
                         int16 StickY = Pad->sThumbLY;
 
+                        XOffset = StickX >> 12;
+                        YOffset = StickY >> 12;
                         // if (Up){
                         //     YOffset -= 4;
                         //     OutputDebugStringA("Control Pad Up button triggered\n");
@@ -385,13 +397,13 @@ int CALLBACK WinMain
                 XINPUT_VIBRATION Vibration;
                 Vibration.wLeftMotorSpeed = 350;
                 Vibration.wRightMotorSpeed = 350;
-                XInputSetState(0, &Vibration);
+                XinputSetState(0, &Vibration);
                 RenderSplendidGradient(&BackBuffer, XOffset, YOffset);
                 DeviceContext = GetDC(Window);
 
-                GetWindowDimension(Window);
                     
-                Win32DisplayBufferWindow(DeviceContext, &ClientRect, &BackBuffer, 0, 0, Dimens.Width, Dimens.Height);
+                GetWindowDimension(Window);
+                Win32DisplayBufferWindow(DeviceContext, Dimens.Width, Dimens.Height, &BackBuffer);
                 ReleaseDC(Window, DeviceContext);
                 // TODO: Somehow the function didn't receive the increase offset var
                 // to create the animation and somehow there is only one color that is blue
