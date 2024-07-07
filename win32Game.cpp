@@ -12,7 +12,7 @@
 #include "dsound.h"
 
 using namespace std;
-
+#de
 #define internal static
 #define local_persist static
 #define global_variable static
@@ -80,11 +80,10 @@ win32LoadXInput(void){
     } else {
         // TODO: Do a diagnostic
     }
-
 }
 
 
-internal void win32InitDSound(void){
+internal void win32InitDSound(HWND window, int32 BufferSize){
     // NOTE:As the mentor said I have the output the sound ahead of a frame
     // to make it work on time
     
@@ -92,12 +91,21 @@ internal void win32InitDSound(void){
     HMODULE DSoundLibrary = LoadLibraryA("dsound.dll");
     if (DSoundLibrary){        
         // NOTE: Create the DSound object - cooperative
-         direct_sound_create* DirectSoundCreate = (direct_sound_create* )
-             GetProcAddress(XInputLibrary, "DirectSoundCreate");
-         LPDIRECTSOUND DirectSound ;
-             if (DirectSoundCreate && SUCCEED(DirectSoundCreate(0, &DirectSound, 0))){
-             // NOTE: Create a primary buffer
+        direct_sound_create* DirectSoundCreate = (direct_sound_create* )
+            GetProcAddress(DSoundLibrary, "DirectSoundCreate");
+        LPDIRECTSOUND DirectSound ;
+        if (DirectSoundCreate && SUCCEED(DirectSoundCreate(0, &DirectSound, 0))){
+            // NOTE: Create a primary buffer
+            // NOTE: Little trick here to clear all the struct member to zero
+            DSBUFFERDESC BufferDescription = {sizeof(BufferDescription)},
+                BufferDescription.dwFlags = DSBCAPS_PRIMARYBUFFER;    
+            LPDIRECTSOUNDBUFFER PrimaryBuffer,                      
+                if(SUCCEED(CreateSoundBuffer(&BufferDescription, &PrimaryBuffer, 0))){
+                          
+                };
              // NOTE: Create a secondary buffer
+            BufferDescription.dwBufferBytes = BufferSize;
+            
              // NOTE: Start it playing
          } else {
              // TODO: Do a diagnostic
@@ -249,14 +257,14 @@ LRESULT CALLBACK MainWindowCallBack(
         {            
             bool IsDown = ((Lparam &(1 << 31)) == 0);
             uint32 vkCode = Wparam;
-                 if(vkCode == VK_LEFT){
+            if(vkCode == VK_LEFT){
                 
-                    OutputDebugStringA("Left Button :");
-                    if(IsDown){                    
-                        OutputDebugStringA(" Is Down");
-                    }
-                    OutputDebugStringA("\n");
-                }            
+                OutputDebugStringA("Left Button :");
+                if(IsDown){                    
+                    OutputDebugStringA(" Is Down");
+                }
+                OutputDebugStringA("\n");
+            }            
         }break;
 
         case WM_SYSKEYDOWN:
