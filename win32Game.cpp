@@ -9,6 +9,7 @@
 #include "Windows.h"
 #include "stdint.h"
 #include "xinput.h"
+#include "dsound.h"
 
 using namespace std;
 
@@ -45,6 +46,7 @@ global_variable x_input_get_state* XinputGetState_  = XinputGetStateStub;
 // This one is to replace the XinputGetState which already been called in Xinput.h
 // with the XinputGetState
 
+// ==================================================================
 #define X_INPUT_SET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex,XINPUT_VIBRATION *pVibration)
 typedef X_INPUT_SET_STATE(x_input_set_state);
 X_INPUT_SET_STATE(XinputSetStateStub){
@@ -52,11 +54,19 @@ X_INPUT_SET_STATE(XinputSetStateStub){
 }
 global_variable x_input_set_state* XinputSetState_  = XinputSetStateStub;
 #define XinputSetState XinputSetState_
+// ==================================================================
+
+// ==================================================================
+// NOTE: Do the analogous thing to the x_input stubs
+#define DIRECT_SOUND_CREATE(name) HRESULT WINAPI name(LPCGUID pcGuidDevice, LPDIRECTSOUND *ppDS,LPUNKNOWN pUnkOuter);
+typedef DIRECT_SOUND_CREATE(direct_sound_create);
+// ==================================================================
 
 internal void
 win32LoadXInput(void){
     HMODULE XInputLibrary = LoadLibrary("xinput1_4.dll");
     if (!XInputLibrary){
+        // TODO: Do a diagnostic
         XInputLibrary = LoadLibrary("xinput1_3.dll");
     }
     // somehow it couldn't find the dll file maybe due to the function or
@@ -67,8 +77,37 @@ win32LoadXInput(void){
         if (!XinputGetState){XinputGetState = XinputGetStateStub;}
         XinputSetState = (x_input_set_state *)GetProcAddress(XInputLibrary, "XInputSetState");
         if (!XinputSetState){XinputSetState = XinputSetStateStub;}
+    } else {
+        // TODO: Do a diagnostic
     }
+
 }
+
+
+internal void win32InitDSound(void){
+    // NOTE:As the mentor said I have the output the sound ahead of a frame
+    // to make it work on time
+    
+    // NOTE: Load the library
+    HMODULE DSoundLibrary = LoadLibraryA("dsound.dll");
+    if (DSoundLibrary){        
+        // NOTE: Create the DSound object - cooperative
+         direct_sound_create* DirectSoundCreate = (direct_sound_create* )
+             GetProcAddress(XInputLibrary, "DirectSoundCreate");
+         LPDIRECTSOUND DirectSound ;
+             if (DirectSoundCreate && SUCCEED(DirectSoundCreate(0, &DirectSound, 0))){
+             // NOTE: Create a primary buffer
+             // NOTE: Create a secondary buffer
+             // NOTE: Start it playing
+         } else {
+             // TODO: Do a diagnostic
+         }
+        
+    }
+    
+    return 0;
+}
+
 
 global_variable bool  Running;
 global_variable HWND Window;
@@ -343,6 +382,7 @@ int CALLBACK WinMain
         
         if(Window){
             Running = true;
+            win32InitDSound();
             while(Running){
                 MSG Message;
                 while(PeekMessageA(&Message, 0, 0, 0, PM_REMOVE)){
