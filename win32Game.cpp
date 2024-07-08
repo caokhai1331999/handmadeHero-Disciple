@@ -6,10 +6,10 @@
    $Notice: (C) Copyright 2024 by Cao Khai, Inc. All Rights Reserved. $
    ======================================================================== */
 #include <iostream>
-#include "Windows.h"
-#include "stdint.h"
-#include "xinput.h"
-#include "dsound.h"
+#include <Windows.h>
+#include <stdint.h>
+#include <xinput.h>
+#include <DSound.h>
 
 using namespace std;
 #define internal static
@@ -82,7 +82,7 @@ win32LoadXInput(void){
 }
 
 
-internal void win32InitDSound(HWND window, int32 BufferSize){
+internal void win32InitDSound(HWND window, int32 SamplePerSecond, int32 BufferSize){
     // NOTE:As the mentor said I have the output the sound ahead of a frame
     // to make it work on time
     
@@ -93,41 +93,86 @@ internal void win32InitDSound(HWND window, int32 BufferSize){
         direct_sound_create* DirectSoundCreate = (direct_sound_create* )
             GetProcAddress(DSoundLibrary, "DirectSoundCreate");
         LPDIRECTSOUND DirectSound ;
-        if (DirectSoundCreate && SUCCEEDED(DirectSoundCreate(0, &DirectSound, 0))){
-            // NOTE: Create a primary buffer
-            // NOTE: Little trick here to clear all the struct member to zero
-            DSBUFFERDESC BufferDescription = {};
-            BufferDescription.dwSize = sizeof(BufferDescription);
-            BufferDescription.dwFlags = DSBCAPS_PRIMARYBUFFER;    
-            LPDIRECTSOUNDBUFFER PrimaryBuffer;                      
-                if(SUCCEEDED(CreateSoundBuffer(&BufferDescription, &PrimaryBuffer, 0))){
+        if (DirectSoundCreate && SUCCEEDED(DirectSoundCreate(0, &DirectSound,
+     0))) {
+            WAVEFORMATEX WaveFormat;
+                    
+            WaveFormat.wFormatTag = WAVE_FORMAT_PCM;
+            WaveFormat.nChannels = 2;
+            WaveFormat.nSamplesPerSec = SamplePerSecond;
+            WaveFormat.wBitsPerSample = 16;
+            // NOTE: Basic thing: Product of is result of multiplying
+            WaveFormat.nBlockAlign = (WaveFormat.nChannels *
+                                      WaveFormat.wBitsPerSample)/8;
+            WaveFormat.nAvgBytesPerSec = (WaveFormat.nSamplesPerSec *
+                                          WaveFormat.nBlockAlign); 
+            WaveFormat.cbSize = 0;
+            
+            // ===============================================================
+            // NOTE: Primary Buffer
+            if(SUCCEEDED(DirectSound->SetCooperativeLevel(window,
+                                                          DSSCL_PRIORITY))) {
+                // NOTE: Little trick here to clear all the struct member to zero
+                DSBUFFERDESC BufferDescription = {};
+                BufferDescription.dwSize = sizeof(BufferDescription);
+                BufferDescription.dwFlags = DSBCAPS_PRIMARYBUFFER;    
+                LPDIRECTSOUNDBUFFER PrimaryBuffer;
+                
+                // NOTE: Create a primary buffer
+                if(SUCCEEDED(DirectSound->CreateSoundBuffer(&BufferDescription,
+                &PrimaryBuffer, 0))) {
                     BufferDescription.dwBufferBytes = BufferSize;
-                    WAVEFORMATEX WaveFormat;
                     
-                    WaveFormat.wFormatTag = WAVE_FORMAT_PCM;
-                    WaveFormat.nChannels = ;
-                    WaveFormat.nSamplesPerSec;
-                    WaveFormat.nAvgBytesPerSec;
-                    WaveFormat.nBlockAlign;
-                    WaveFormat.wBitsPerSample;
-                    WaveFormat.cbSize;
-                    
-                    if((PrimaryBuffer->SetFormat(&WaveFormat)) == DS_OK){
-                        // NOTE: Create a secondary buffer
-                        LPDIRECTSOUNDBUFFER SecondBuffer;                      
+                    if((PrimaryBuffer->SetFormat(&WaveFormat)) == DS_OK) {
+                    //NOTE: Or
+                    // if(SUCCEEDED(PrimaryBuffer->SetFormat(&WaveFormat))){ 
                         // NOTE: Start it playing
                     }else {
-                        
+                        // TODO: Do a diagnostic                   
                     }
-                };
+                }
+                        
+                } else {
+                    // TODO: Do a diagnostic
+                }
+                    
+                    // =========================================================
+
+                    // NOTE: Then the second one
+                if(SUCCEEDED(DirectSound->SetCooperativeLevel(window,
+                                                          DSSCL_PRIORITY))) {
+                // NOTE: Create a secondary buffer
+                DSBUFFERDESC BufferDescription = {};
+                BufferDescription.dwSize = sizeof(BufferDescription);
+                BufferDescription.dwFlags = DSBCAPS_STATIC;                    
+                LPDIRECTSOUNDBUFFER SecondBuffer;
+                if(SUCCEEDED(DirectSound->CreateSoundBuffer(&BufferDescription,
+                                                          &SecondBuffer, 0))) {
+                  BufferDescription.dwBufferBytes = BufferSize;                    
+                    if((SecondBuffer->SetFormat(&WaveFormat)) == DS_OK) {
+                        //NOTE: Or
+                        // if(SUCCEEDED(PrimaryBuffer->SetFormat(&WaveFormat))){ 
+                        // NOTE: Start it playing
+                    }else {
+                        // TODO: Do a diagnostic                   
+                        // NOTE: Start it playing
+                }                    
+                }
+                else {
+                    // TODO: Do a diagnostic
+                }
+                
+            } else {
+                // TODO: Do a diagnostic
+            }
+                // ================================================================
         
-         } else {
-             // TODO: Do a diagnostic
-         }
+        } else {
+            // TODO: Do a diagnostic
+        }
         
     }
 
-    return 0;
 }
 
 
