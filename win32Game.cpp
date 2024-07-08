@@ -12,7 +12,6 @@
 #include "dsound.h"
 
 using namespace std;
-#de
 #define internal static
 #define local_persist static
 #define global_variable static
@@ -94,25 +93,40 @@ internal void win32InitDSound(HWND window, int32 BufferSize){
         direct_sound_create* DirectSoundCreate = (direct_sound_create* )
             GetProcAddress(DSoundLibrary, "DirectSoundCreate");
         LPDIRECTSOUND DirectSound ;
-        if (DirectSoundCreate && SUCCEED(DirectSoundCreate(0, &DirectSound, 0))){
+        if (DirectSoundCreate && SUCCEEDED(DirectSoundCreate(0, &DirectSound, 0))){
             // NOTE: Create a primary buffer
             // NOTE: Little trick here to clear all the struct member to zero
-            DSBUFFERDESC BufferDescription = {sizeof(BufferDescription)},
-                BufferDescription.dwFlags = DSBCAPS_PRIMARYBUFFER;    
-            LPDIRECTSOUNDBUFFER PrimaryBuffer,                      
-                if(SUCCEED(CreateSoundBuffer(&BufferDescription, &PrimaryBuffer, 0))){
-                          
+            DSBUFFERDESC BufferDescription = {};
+            BufferDescription.dwSize = sizeof(BufferDescription);
+            BufferDescription.dwFlags = DSBCAPS_PRIMARYBUFFER;    
+            LPDIRECTSOUNDBUFFER PrimaryBuffer;                      
+                if(SUCCEEDED(CreateSoundBuffer(&BufferDescription, &PrimaryBuffer, 0))){
+                    BufferDescription.dwBufferBytes = BufferSize;
+                    WAVEFORMATEX WaveFormat;
+                    
+                    WaveFormat.wFormatTag = WAVE_FORMAT_PCM;
+                    WaveFormat.nChannels = ;
+                    WaveFormat.nSamplesPerSec;
+                    WaveFormat.nAvgBytesPerSec;
+                    WaveFormat.nBlockAlign;
+                    WaveFormat.wBitsPerSample;
+                    WaveFormat.cbSize;
+                    
+                    if((PrimaryBuffer->SetFormat(&WaveFormat)) == DS_OK){
+                        // NOTE: Create a secondary buffer
+                        LPDIRECTSOUNDBUFFER SecondBuffer;                      
+                        // NOTE: Start it playing
+                    }else {
+                        
+                    }
                 };
-             // NOTE: Create a secondary buffer
-            BufferDescription.dwBufferBytes = BufferSize;
-            
-             // NOTE: Start it playing
+        
          } else {
              // TODO: Do a diagnostic
          }
         
     }
-    
+
     return 0;
 }
 
@@ -153,8 +167,7 @@ void RenderSplendidGradient(Win32_Offscreen_Buffer* OBuffer,int XOffset, int YOf
     // Row is a pointer to every line of bitmapMemory
     // While pitch is data length of everyline of bitmap
     int Width = OBuffer->BitmapWidth;
-    int Height = OBuffer->BitmapHeight;
-    
+    int Height = OBuffer->BitmapHeight;    
     int Pitch = OBuffer->BytesPerPixel*OBuffer->BitmapWidth;
     uint8* Row = (uint8 *)OBuffer->BitmapMemory;
     
