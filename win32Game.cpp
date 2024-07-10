@@ -24,8 +24,7 @@ typedef uint8_t uint8;
 typedef uint16_t uint16;
 typedef uint32_t uint32;
 
-// NOTE: This is all about calling the function in the Xinput.h without the noticing from the
-// compiler
+// NOTE: This is all about calling the function in the Xinput.h without the noticing from the compiler
 #define X_INPUT_GET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex,XINPUT_STATE *pState)
 typedef X_INPUT_GET_STATE(x_input_get_state);
 // NOTE: The second line will be expand out to be like this :
@@ -33,10 +32,10 @@ typedef X_INPUT_GET_STATE(x_input_get_state);
 // This is to turn on the compiler strict type checking
 // And to DECLARE A FUNCTION SIGNATURE AS A TYPE
 // for example: x_input_get_state _XinputgetState()
-X_INPUT_GET_STATE(XinputGetStateStub){
+X_INPUT_GET_STATE(XinputGetStateStub) {
     return (ERROR_DEVICE_NOT_CONNECTED);
 }
-// NOTE: But the rules of C does not allow this(x_input_get_state _XinputGetStateStub(){//do something;})
+// NOTE: But the rules of C does not allow this(x_input_get_state _XinputGetStateStub() {//do something;})
 // so we use this for function pointer
 global_variable x_input_get_state* XinputGetState_  = XinputGetStateStub;
 // So finally we have a pointer name XinputGetState point to the function
@@ -44,11 +43,10 @@ global_variable x_input_get_state* XinputGetState_  = XinputGetStateStub;
 #define XinputGetState XinputGetState_
 // This one is to replace the XinputGetState which already been called in Xinput.h
 // with the XinputGetState
-
 // ==================================================================
 #define X_INPUT_SET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex,XINPUT_VIBRATION *pVibration)
 typedef X_INPUT_SET_STATE(x_input_set_state);
-X_INPUT_SET_STATE(XinputSetStateStub){
+X_INPUT_SET_STATE(XinputSetStateStub) {
     return (ERROR_DEVICE_NOT_CONNECTED);
 }
 global_variable x_input_set_state* XinputSetState_  = XinputSetStateStub;
@@ -62,33 +60,33 @@ typedef DIRECT_SOUND_CREATE(direct_sound_create);
 // ==================================================================
 
 internal void
-win32LoadXInput(void){
+win32LoadXInput(void) {
     HMODULE XInputLibrary = LoadLibrary("xinput1_4.dll");
-    if (!XInputLibrary){
+    if (!XInputLibrary) {
         // TODO: Do a diagnostic
         XInputLibrary = LoadLibrary("xinput1_3.dll");
     }
     // somehow it couldn't find the dll file maybe due to the function or
     // it's just not there therefore I used xinput1_4.dll instead
-    if(XInputLibrary){
+    if(XInputLibrary) {
         // retrieve the address of the exported function in dll file
         XinputGetState = (x_input_get_state *)GetProcAddress(XInputLibrary, "XInputGetState");
-        if (!XinputGetState){XinputGetState = XinputGetStateStub;}
+        if (!XinputGetState) {XinputGetState = XinputGetStateStub;}
         XinputSetState = (x_input_set_state *)GetProcAddress(XInputLibrary, "XInputSetState");
-        if (!XinputSetState){XinputSetState = XinputSetStateStub;}
+        if (!XinputSetState) {XinputSetState = XinputSetStateStub;}
     } else {
         // TODO: Do a diagnostic
     }
 }
 
 
-internal void win32InitDSound(HWND window, int32 SamplePerSecond, int32 BufferSize){
+internal void win32InitDSound(HWND window, int32 SamplePerSecond, int32 SecondBufferSize) {
     // NOTE:As the mentor said I have the output the sound ahead of a frame
     // to make it work on time
     
     // NOTE: Load the library
     HMODULE DSoundLibrary = LoadLibraryA("dsound.dll");
-    if (DSoundLibrary){        
+    if (DSoundLibrary) {        
         // NOTE: Create the DSound object - cooperative
         direct_sound_create* DirectSoundCreate = (direct_sound_create* )
             GetProcAddress(DSoundLibrary, "DirectSoundCreate");
@@ -121,11 +119,13 @@ internal void win32InitDSound(HWND window, int32 SamplePerSecond, int32 BufferSi
                 // NOTE: Create a primary buffer
                 if(SUCCEEDED(DirectSound->CreateSoundBuffer(&BufferDescription,
                 &PrimaryBuffer, 0))) {
-                    BufferDescription.dwBufferBytes = BufferSize;
+                    OutputDebugStringA("Primary sound buffer was create successfully/n");                    
+                    BufferDescription.dwBufferBytes = 0;
                     
                     if((PrimaryBuffer->SetFormat(&WaveFormat)) == DS_OK) {
                     //NOTE: Or
-                    // if(SUCCEEDED(PrimaryBuffer->SetFormat(&WaveFormat))){ 
+                    // if(SUCCEEDED(PrimaryBuffer->SetFormat(&WaveFormat))) {
+                    OutputDebugStringA("Primary sound buffer was set/n");                        
                         // NOTE: Start it playing
                     }else {
                         // TODO: Do a diagnostic                   
@@ -144,14 +144,18 @@ internal void win32InitDSound(HWND window, int32 SamplePerSecond, int32 BufferSi
                 // NOTE: Create a secondary buffer
                 DSBUFFERDESC BufferDescription = {};
                 BufferDescription.dwSize = sizeof(BufferDescription);
-                BufferDescription.dwFlags = DSBCAPS_STATIC;                    
+                BufferDescription.dwFlags = 0;
+                BufferDescription.dwBufferBytes = BufferSize;                    
+                BufferDescription.lpwfxFormat = &WaveFormat;
+                
                 LPDIRECTSOUNDBUFFER SecondBuffer;
                 if(SUCCEEDED(DirectSound->CreateSoundBuffer(&BufferDescription,
                                                           &SecondBuffer, 0))) {
-                  BufferDescription.dwBufferBytes = BufferSize;                    
+                    OutputDebugStringA("Secondary sound buffer was created successfully/n");                                        
                     if((SecondBuffer->SetFormat(&WaveFormat)) == DS_OK) {
                         //NOTE: Or
-                        // if(SUCCEEDED(PrimaryBuffer->SetFormat(&WaveFormat))){ 
+                        // if(SUCCEEDED(PrimaryBuffer->SetFormat(&WaveFormat)))
+                    OutputDebugStringA("Secondary sound buffer 's format was set/n");
                         // NOTE: Start it playing
                     }else {
                         // TODO: Do a diagnostic                   
@@ -171,6 +175,8 @@ internal void win32InitDSound(HWND window, int32 SamplePerSecond, int32 BufferSi
             // TODO: Do a diagnostic
         }
         
+    } else {
+            // TODO: Do a diagnostic        
     }
 
 }
@@ -199,7 +205,7 @@ struct win32Dimension{
     int Width{1280};
 }Dimens;
 
-void GetWindowDimension(HWND Window){
+void GetWindowDimension(HWND Window) {
     GetClientRect(Window, &ClientRect);
     Dimens.Width = ClientRect.right - ClientRect.left;
     Dimens.Height= ClientRect.bottom - ClientRect.top;
@@ -207,7 +213,7 @@ void GetWindowDimension(HWND Window){
 
 // TODO: Now time to move on to input/output section 
 
-void RenderSplendidGradient(Win32_Offscreen_Buffer* OBuffer,int XOffset, int YOffset){
+void RenderSplendidGradient(Win32_Offscreen_Buffer* OBuffer,int XOffset, int YOffset) {
     // RR GG BB
     // Row is a pointer to every line of bitmapMemory
     // While pitch is data length of everyline of bitmap
@@ -216,9 +222,9 @@ void RenderSplendidGradient(Win32_Offscreen_Buffer* OBuffer,int XOffset, int YOf
     int Pitch = OBuffer->BytesPerPixel*OBuffer->BitmapWidth;
     uint8* Row = (uint8 *)OBuffer->BitmapMemory;
     
-    for (int Y{0}; Y < Height; Y++){
+    for (int Y{0}; Y < Height; Y++) {
         uint32* Pixel = (uint32 *)Row;
-        for(int X{0}; X < Width; X++){
+        for(int X{0}; X < Width; X++) {
             uint8 Blue = ( X + XOffset);
             uint8 Green = ( Y + YOffset);
             // NOTE: AA RR GG BB()
@@ -231,12 +237,12 @@ void RenderSplendidGradient(Win32_Offscreen_Buffer* OBuffer,int XOffset, int YOf
     }        
 }
 
-internal void Win32ResizeDIBSection(Win32_Offscreen_Buffer* OBuffer, int Width, int Height){
+internal void Win32ResizeDIBSection(Win32_Offscreen_Buffer* OBuffer, int Width, int Height) {
     // Create a storage for memory first
     // using virtualAlloc
     // then store bitmap in it
     
-    if(OBuffer->BitmapMemory){
+    if(OBuffer->BitmapMemory) {
         VirtualFree(OBuffer->BitmapMemory, 0, MEM_RELEASE);
     }
     // NOTE: The BitmapWidth change every time we resize the window
@@ -266,7 +272,7 @@ internal void Win32ResizeDIBSection(Win32_Offscreen_Buffer* OBuffer, int Width, 
 // NOTE: Keep in mind that try to all what you need to release back to memory
 // in a total thing so that I can release it in aggregate
 
-internal void Win32DisplayBufferWindow(HDC DeviceContext, int WindowWidth, int WindowHeight, Win32_Offscreen_Buffer* OBuffer ){
+internal void Win32DisplayBufferWindow(HDC DeviceContext, int WindowWidth, int WindowHeight, Win32_Offscreen_Buffer* OBuffer ) {
     // the Source and the Destination rectangle means
         
     StretchDIBits(
@@ -289,7 +295,7 @@ LRESULT CALLBACK MainWindowCallBack(
                                     )
 {
     LRESULT result;
-    switch(Message){
+    switch(Message) {
         case WM_SIZE:
         {
             // NOTE: Maybe the underlying cause of the unchanging bit is lay on the
@@ -315,10 +321,10 @@ LRESULT CALLBACK MainWindowCallBack(
         {            
             bool IsDown = ((Lparam &(1 << 31)) == 0);
             uint32 vkCode = Wparam;
-            if(vkCode == VK_LEFT){
+            if(vkCode == VK_LEFT) {
                 
                 OutputDebugStringA("Left Button :");
-                if(IsDown){                    
+                if(IsDown) {                    
                     OutputDebugStringA(" Is Down");
                 }
                 OutputDebugStringA("\n");
@@ -329,7 +335,7 @@ LRESULT CALLBACK MainWindowCallBack(
         {
             uint32 vkCode = Wparam;
             bool AltkeyisDown = ((Lparam &(1 << 29)) != 0);
-            if((vkCode == VK_F4) && AltkeyisDown){
+            if((vkCode == VK_F4) && AltkeyisDown) {
                 Running = false;
             }                                        
             OutputDebugStringA("WM_SYSKEYDOWN\n");            
@@ -347,26 +353,26 @@ LRESULT CALLBACK MainWindowCallBack(
             // So if it is bit 30 it is down 
             bool WasDown = ((Lparam &(1 << 30)) != 0);
             bool IsDown = ((Lparam &(1 << 31)) == 0);            
-            if (WasDown != IsDown){
+            if (WasDown != IsDown) {
 
-                if(vkCode == VK_UP){
+                if(vkCode == VK_UP) {
                     YOffset -= 10;
                 }
 
-                else if(vkCode == VK_DOWN){
+                else if(vkCode == VK_DOWN) {
                     YOffset += 10;
                 }
 
-                else if(vkCode == VK_LEFT){
+                else if(vkCode == VK_LEFT) {
                     XOffset -= 10;
                     OutputDebugStringA("Left Button :");
-                    if(WasDown){                    
+                    if(WasDown) {                    
                         OutputDebugStringA(" Was Down");
                     }
                     OutputDebugStringA("\n");
                 }
 
-                else if(vkCode == VK_RIGHT){
+                else if(vkCode == VK_RIGHT) {
                     XOffset += 10;
                 }
             }
@@ -394,7 +400,7 @@ LRESULT CALLBACK MainWindowCallBack(
             GetWindowDimension(Window);
             // local_persist DWORD Operation = WHITENESS;
 
-            // if (Operation == WHITENESS){
+            // if (Operation == WHITENESS) {
             //     Operation = BLACKNESS;
             // }else {
             //     Operation = WHITENESS;
@@ -428,7 +434,7 @@ int CALLBACK WinMain
     WindowClass.hInstance = Instance;
     WindowClass.lpszClassName = "First Game Window Class";
   
-    if(RegisterClassA(&WindowClass)){
+    if(RegisterClassA(&WindowClass)) {
         
         Window = CreateWindowExA(
             // NOTE: The window didn't show up is because the first argument
@@ -446,13 +452,19 @@ int CALLBACK WinMain
             Instance ,
             0);
         
-        if(Window){
+        if(Window) {
             Running = true;
-            win32InitDSound();
-            while(Running){
+                int SamplePerSecond = 48000;
+                int BytesPerSample = sizeof(int16)*2;
+                int32 SecondBufferSize = 2*BytesPerSample*SamplePerSecond;
+                //NOTE: we create a second buffer last for 2 second with
+                // sample per second is 4800 and byte per sample is sizeof(int16) {still
+                // don't know}
+                win32InitDSound(Window, SamplePerSecond, SecondBufferSize);
+            while(Running) {
                 MSG Message;
-                while(PeekMessageA(&Message, 0, 0, 0, PM_REMOVE)){
-                    if (Message.message == WM_QUIT){
+                while(PeekMessageA(&Message, 0, 0, 0, PM_REMOVE)) {
+                    if (Message.message == WM_QUIT) {
                         Running = false;
                     }
                     DispatchMessage(&Message);
@@ -466,7 +478,7 @@ int CALLBACK WinMain
                 {
                     XINPUT_STATE ControllerState;
                     
-                    if(XinputGetState(DeviceIndex, &ControllerState) == ERROR_SUCCESS){
+                    if(XinputGetState(DeviceIndex, &ControllerState) == ERROR_SUCCESS) {
                         // NOTE: The controller is plugged in
                         XINPUT_GAMEPAD* Pad = &ControllerState.Gamepad;
                                                
@@ -490,7 +502,7 @@ int CALLBACK WinMain
 
                         XOffset = StickX >> 12;
                         YOffset = StickY >> 12;
-                        // if (Up){
+                        // if (Up) {
                         //     YOffset -= 4;
                         //     OutputDebugStringA("Control Pad Up button triggered\n");
                         // }
