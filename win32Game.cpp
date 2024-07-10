@@ -145,7 +145,7 @@ internal void win32InitDSound(HWND window, int32 SamplePerSecond, int32 SecondBu
                 DSBUFFERDESC BufferDescription = {};
                 BufferDescription.dwSize = sizeof(BufferDescription);
                 BufferDescription.dwFlags = 0;
-                BufferDescription.dwBufferBytes = BufferSize;                    
+                BufferDescription.dwBufferBytes = SecondBufferSize;                    
                 BufferDescription.lpwfxFormat = &WaveFormat;
                 
                 LPDIRECTSOUNDBUFFER SecondBuffer;
@@ -458,8 +458,7 @@ int CALLBACK WinMain
                 int BytesPerSample = sizeof(int16)*2;
                 int32 SecondBufferSize = 2*BytesPerSample*SamplePerSecond;
                 //NOTE: we create a second buffer last for 2 second with
-                // sample per second is 4800 and byte per sample is sizeof(int16) {still
-                // don't know}
+                // sample per second is 4800 and byte per sample is sizeof(int16)
                 win32InitDSound(Window, SamplePerSecond, SecondBufferSize);
             while(Running) {
                 MSG Message;
