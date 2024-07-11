@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <xinput.h>
 #include <DSound.h>
+#include <mmeapi.h>
 
 using namespace std;
 #define internal static
@@ -77,6 +78,100 @@ win32LoadXInput(void) {
     } else {
         // TODO: Do a diagnostic
     }
+}
+
+// NOTE: Remember to comment out this part when try to compile (Practice write)
+// the same function but use multimedia api
+internal void win32InitMultiMediaSound(HWND window, int32 SamplePerSecond, int32 SecondBufferSize) {
+    // NOTE:As the mentor said I have the output the sound ahead of a frame
+    // to make it work on time
+    
+    HMODULE DSoundLibrary = LoadLibraryA("mmeapi.dll");
+    // NOTE: Load the library
+    if (DSoundLibrary) {        
+        // NOTE: Create the DSound object - cooperative
+        direct_sound_create* DirectSoundCreate = (direct_sound_create* )
+            GetProcAddress(DSoundLibrary, "DirectSoundCreate");
+        LPDIRECTSOUND DirectSound ;
+        if (DirectSoundCreate && SUCCEEDED(DirectSoundCreate(0, &DirectSound,
+     0))) {
+            WAVEFORMATEX WaveFormat;
+                    
+            WaveFormat.wFormatTag = WAVE_FORMAT_PCM;
+            WaveFormat.nChannels = 2;
+            WaveFormat.nSamplesPerSec = SamplePerSecond;
+            WaveFormat.wBitsPerSample = 16;
+            // NOTE: Basic thing: Product of is result of multiplying
+            WaveFormat.nBlockAlign = (WaveFormat.nChannels *
+                                      WaveFormat.wBitsPerSample)/8;
+            WaveFormat.nAvgBytesPerSec = (WaveFormat.nSamplesPerSec *
+                                          WaveFormat.nBlockAlign); 
+            WaveFormat.cbSize = 0;
+            
+            // ===============================================================
+            // NOTE: Primary Buffer
+            if(SUCCEEDED(DirectSound->SetCooperativeLevel(window,
+                                                          DSSCL_PRIORITY))) {
+                // NOTE: Little trick here to clear all the struct member to zero
+                DSBUFFERDESC BufferDescription = {};
+                BufferDescription.dwSize = sizeof(BufferDescription);
+                BufferDescription.dwFlags = DSBCAPS_PRIMARYBUFFER;    
+                LPDIRECTSOUNDBUFFER PrimaryBuffer;
+                
+                // NOTE: Create a primary buffer
+                if(SUCCEEDED(DirectSound->CreateSoundBuffer(&BufferDescription,
+                &PrimaryBuffer, 0))) {
+                    OutputDebugStringA("Primary sound buffer was create successfully/n");                    
+                    BufferDescription.dwBufferBytes = 0;
+                    
+                    if((PrimaryBuffer->SetFormat(&WaveFormat)) == DS_OK) {
+                    //NOTE: Or
+                    // if(SUCCEEDED(PrimaryBuffer->SetFormat(&WaveFormat))) {
+                    OutputDebugStringA("Primary sound buffer was set/n");                        
+                        // NOTE: Start it playing
+                    }else {
+                        // TODO: Do a diagnostic                   
+                    }
+                }
+                        
+                } else {
+                    // TODO: Do a diagnostic
+                }
+                    
+                    // =========================================================
+
+                    // NOTE: Then the second one
+                if(SUCCEEDED(DirectSound->SetCooperativeLevel(window,
+                                                          DSSCL_PRIORITY))) {
+                // NOTE: Create a secondary buffer
+                DSBUFFERDESC BufferDescription = {};
+                BufferDescription.dwSize = sizeof(BufferDescription);
+                BufferDescription.dwFlags = 0;
+                BufferDescription.dwBufferBytes = SecondBufferSize;                    
+                BufferDescription.lpwfxFormat = &WaveFormat;
+                                
+                LPDIRECTSOUNDBUFFER SecondBuffer;
+                if(SUCCEEDED(DirectSound->CreateSoundBuffer(&BufferDescription,
+                                                          &SecondBuffer, 0))) {
+                    OutputDebugStringA("Secondary sound buffer was created successfully/n");                                        
+                }
+                else {
+                    // TODO: Do a diagnostic
+                }
+                
+            } else {
+                // TODO: Do a diagnostic
+            }
+                // ================================================================
+        
+        } else {
+            // TODO: Do a diagnostic
+        }
+        
+    } else {
+            // TODO: Do a diagnostic        
+    }
+
 }
 
 
@@ -147,20 +242,11 @@ internal void win32InitDSound(HWND window, int32 SamplePerSecond, int32 SecondBu
                 BufferDescription.dwFlags = 0;
                 BufferDescription.dwBufferBytes = SecondBufferSize;                    
                 BufferDescription.lpwfxFormat = &WaveFormat;
-                
+                                
                 LPDIRECTSOUNDBUFFER SecondBuffer;
                 if(SUCCEEDED(DirectSound->CreateSoundBuffer(&BufferDescription,
                                                           &SecondBuffer, 0))) {
                     OutputDebugStringA("Secondary sound buffer was created successfully/n");                                        
-                    if((SecondBuffer->SetFormat(&WaveFormat)) == DS_OK) {
-                        //NOTE: Or
-                        // if(SUCCEEDED(PrimaryBuffer->SetFormat(&WaveFormat)))
-                    OutputDebugStringA("Secondary sound buffer 's format was set/n");
-                        // NOTE: Start it playing
-                    }else {
-                        // TODO: Do a diagnostic                   
-                        // NOTE: Start it playing
-                }                    
                 }
                 else {
                     // TODO: Do a diagnostic
