@@ -1,3 +1,3 @@
 xcopy C:\"Users\klove\Desktop\Temporary folder\C++ Practice\First Window app" E:\"First Window app" /Y /S
-xcopy C:\Users\klove\AppData\Roaming\.ema* E:\"First Window app"
+xcopy C:\Users\klove\AppData\Roaming\.ema* E:\"First Window app" /Y
 sh.exe ./backupOnline.sh
