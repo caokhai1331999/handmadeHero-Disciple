@@ -9,22 +9,25 @@
 #include <Windows.h>
 #include <stdint.h>
 #include <xinput.h>
+#include <combaseapi.h>
 #include <DSound.h>
-#include <mmeapi.h>
+#include <mmdeviceapi.h>
+#include <audioclient.h>
 
 using namespace std;
+
 #define internal static
 #define local_persist static
 #define global_variable static
 
-typedef int8_t int8;
 typedef int16_t int16;
+typedef int8_t int8;
 typedef int32_t int32;
 
 typedef uint8_t uint8;
 typedef uint16_t uint16;
 typedef uint32_t uint32;
-
+;
 // NOTE: This is all about calling the function in the Xinput.h without the noticing from the compiler
 #define X_INPUT_GET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex,XINPUT_STATE *pState)
 typedef X_INPUT_GET_STATE(x_input_get_state);
@@ -55,9 +58,15 @@ global_variable x_input_set_state* XinputSetState_  = XinputSetStateStub;
 // ==================================================================
 
 // ==================================================================
-// NOTE: Do the analogous thing to the x_input stubs
+// NOTE: 
 #define DIRECT_SOUND_CREATE(name) HRESULT WINAPI name(LPCGUID pcGuidDevice, LPDIRECTSOUND *ppDS,LPUNKNOWN pUnkOuter);
 typedef DIRECT_SOUND_CREATE(direct_sound_create);
+// ==================================================================
+
+// ==================================================================
+// NOTE: 
+#define CoCreateInstance(name) HRESULT name(REFCLSID rclsid, LPUNKNOWN pUnkOuter, DWORD dwClsContext, REFIID riid, LPVOID *ppv);
+typedef CoCreateInstance(Co_Create_Instance);
 // ==================================================================
 
 internal void
@@ -80,93 +89,64 @@ win32LoadXInput(void) {
     }
 }
 
-// NOTE: Remember to comment out this part when try to compile (Practice write)
-// the same function but use multimedia api
-internal void win32InitMultiMediaSound(HWND window, int32 SamplePerSecond, int32 SecondBufferSize) {
+internal void win32InitCoreAudioSound(HWND window, int32 SamplePerSecond, int32 SecondBufferSize) {
     // NOTE:As the mentor said I have the output the sound ahead of a frame
     // to make it work on time
     
-    HMODULE DSoundLibrary = LoadLibraryA("mmeapi.dll");
-    // NOTE: Load the library
-    if (DSoundLibrary) {        
-        // NOTE: Create the DSound object - cooperative
-        direct_sound_create* DirectSoundCreate = (direct_sound_create* )
-            GetProcAddress(DSoundLibrary, "DirectSoundCreate");
-        LPDIRECTSOUND DirectSound ;
-        if (DirectSoundCreate && SUCCEEDED(DirectSoundCreate(0, &DirectSound,
-     0))) {
-            WAVEFORMATEX WaveFormat;
-                    
-            WaveFormat.wFormatTag = WAVE_FORMAT_PCM;
-            WaveFormat.nChannels = 2;
-            WaveFormat.nSamplesPerSec = SamplePerSecond;
-            WaveFormat.wBitsPerSample = 16;
-            // NOTE: Basic thing: Product of is result of multiplying
-            WaveFormat.nBlockAlign = (WaveFormat.nChannels *
-                                      WaveFormat.wBitsPerSample)/8;
-            WaveFormat.nAvgBytesPerSec = (WaveFormat.nSamplesPerSec *
-                                          WaveFormat.nBlockAlign); 
-            WaveFormat.cbSize = 0;
-            
-            // ===============================================================
-            // NOTE: Primary Buffer
-            if(SUCCEEDED(DirectSound->SetCooperativeLevel(window,
-                                                          DSSCL_PRIORITY))) {
-                // NOTE: Little trick here to clear all the struct member to zero
-                DSBUFFERDESC BufferDescription = {};
-                BufferDescription.dwSize = sizeof(BufferDescription);
-                BufferDescription.dwFlags = DSBCAPS_PRIMARYBUFFER;    
-                LPDIRECTSOUNDBUFFER PrimaryBuffer;
-                
-                // NOTE: Create a primary buffer
-                if(SUCCEEDED(DirectSound->CreateSoundBuffer(&BufferDescription,
-                &PrimaryBuffer, 0))) {
-                    OutputDebugStringA("Primary sound buffer was create successfully/n");                    
-                    BufferDescription.dwBufferBytes = 0;
-                    
-                    if((PrimaryBuffer->SetFormat(&WaveFormat)) == DS_OK) {
-                    //NOTE: Or
-                    // if(SUCCEEDED(PrimaryBuffer->SetFormat(&WaveFormat))) {
-                    OutputDebugStringA("Primary sound buffer was set/n");                        
-                        // NOTE: Start it playing
-                    }else {
-                        // TODO: Do a diagnostic                   
-                    }
-                }
-                        
-                } else {
-                    // TODO: Do a diagnostic
-                }
-                    
-                    // =========================================================
+    HMODULE MmdeviceapiLibrary = LoadLibraryA("mmdeviceapi.dll");
 
-                    // NOTE: Then the second one
-                if(SUCCEEDED(DirectSound->SetCooperativeLevel(window,
-                                                          DSSCL_PRIORITY))) {
-                // NOTE: Create a secondary buffer
-                DSBUFFERDESC BufferDescription = {};
-                BufferDescription.dwSize = sizeof(BufferDescription);
-                BufferDescription.dwFlags = 0;
-                BufferDescription.dwBufferBytes = SecondBufferSize;                    
-                BufferDescription.lpwfxFormat = &WaveFormat;
-                                
-                LPDIRECTSOUNDBUFFER SecondBuffer;
-                if(SUCCEEDED(DirectSound->CreateSoundBuffer(&BufferDescription,
-                                                          &SecondBuffer, 0))) {
-                    OutputDebugStringA("Secondary sound buffer was created successfully/n");                                        
-                }
-                else {
-                    // TODO: Do a diagnostic
-                }
-                
-            } else {
-                // TODO: Do a diagnostic
-            }
-                // ================================================================
-        
-        } else {
-            // TODO: Do a diagnostic
-        }
+    // // NOTE: Load the library
+    if (MmdeviceapiLibrary) {
+        // NOTE: Get access to the IMMDeviceEnumerator api through..
+const CLSID CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator);
+const IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
+void** pEnumerator;
+Co_Create_Instance* CoCreateInstance;
+// NOTE: Create a IMMDeviceEnumerator instance
+if (SUCCEEDED(CoCreateInstance(CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL, IID_IMMDeviceEnumerator, &pEnumerator))){
+    // NOTE: pEnumerator is a pointer to the IMMDeviceEnumerator
+    // NOTE: Get the IMMDeviceCollection api through IMMDeviceEnumerator::
+    IMMDeviceCollection **ppDevicesl;
+      if (SUCCEEDED( EnumAudioEndpoints(eAll, DEVICE_STATE_ACTIVE, ppDevicesl)))
+      {
+// NOTE: Get the IMMDevice by calling GetDevice
+          IMMDevice **ppDevice;
+          if(SUCCEEDED( Item(0, ppDevice))){
+              // NOTE: Activate the IMMDevice
+              void** ppInterface;
+                  if(SUCCEEDED(Activate( IID_IAudioClient, CLSCTX_ALL, NULL, ppInterface))) {
+                      // NOTE: Initialize the IMMDevice
+            WAVEFORMATEX* pFormat;
+            // NOTE: Now set the format                          
+            WaveFormat->wFormatTag = WAVE_FORMAT_PCM;
+            WaveFormat->nChannels = 2;
+            WaveFormat->nSamplesPerSec = SamplePerSecond;
+            WaveFormat->wBitsPerSample = 16;
+            // NOTE: Basic thing: Product of is result of multiplying
+            WaveFormat->nBlockAlign = (WaveFormat->nChannels * WaveFormat->wBitsPerSample)/8;
+            WaveFormat->nAvgBytesPerSec = (WaveFormat->nSamplesPerSec * WaveFormat->nBlockAlign); 
+            WaveFormat->cbSize = 0;
+            if (SUCCEEDED(Initialize(AUDCLNT_SHAREMODE_EXCLUSIVE, 0, hnsBufferDuration, 0, *pFormat, NULL))) {
+                                                 
+                      } else {
+                          // TODO: Do a diagnoses
+                      }                
+                  } else {
+                  // TODO: Do a diagnoses                  
+              }
+              
+          } else {
+              // TODO: Do a diagnoses
+          }
+          
+      } else {
+          // TODO: Do a diagnoses
+      }
+         
+        }else{
+    // TODO: Do a diagnoses
+}
+    //         WAVEFORMATEX WaveFormat;                                
         
     } else {
             // TODO: Do a diagnostic        
