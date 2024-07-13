@@ -12,6 +12,7 @@
 #include <combaseapi.h>
 #include <DSound.h>
 #include <mmdeviceapi.h>
+#include <endpointvolume.h>
 #include <audioclient.h>
 
 using namespace std;
@@ -65,8 +66,14 @@ typedef DIRECT_SOUND_CREATE(direct_sound_create);
 
 // ==================================================================
 // NOTE: 
-#define CoCreateInstance(name) HRESULT name(REFCLSID rclsid, LPUNKNOWN pUnkOuter, DWORD dwClsContext, REFIID riid, LPVOID *ppv);
-typedef CoCreateInstance(Co_Create_Instance);
+#define CO_CREATE_INSTANCE(name) HRESULT name(CLSID rclsid, LPUNKNOWN pUnkOuter, DWORD dwClsContext, IID riid, LPVOID* Enumerator);
+typedef CO_CREATE_INSTANCE (Co_Create_Instance);
+// ==================================================================
+
+// ==================================================================
+// NOTE: 
+#define ENUM_AUDIO_ENDPOINTS(name) HRESULT name (EDataFlow dataFlow, DWORD        dwStateMask, LPVOID  FAR * ppv);
+typedef ENUM_AUDIO_ENDPOINTS (Enum_Audio_Endpoints);
 // ==================================================================
 
 internal void
@@ -89,60 +96,72 @@ win32LoadXInput(void) {
     }
 }
 
+// ============================================================================
+// NOTE: DONE Practice using coreaudio and multimedia api instead of directsound
+//Now it's time to write real wave
 internal void win32InitCoreAudioSound(HWND window, int32 SamplePerSecond, int32 SecondBufferSize) {
     // NOTE:As the mentor said I have the output the sound ahead of a frame
     // to make it work on time
     
-    HMODULE MmdeviceapiLibrary = LoadLibraryA("mmdeviceapi.dll");
+    HMODULE CombaseapiLibrary = LoadLibraryA("combase.dll");
+    HMODULE MmdeviceapiLibrary = LoadLibraryA("mmdevice.dll");
 
     // // NOTE: Load the library
-    if (MmdeviceapiLibrary) {
+    if (CombaseapiLibrary && MmdeviceapiLibrary) {
         // NOTE: Get access to the IMMDeviceEnumerator api through..
+        //NOTE: Seem like I didn't understand shit. The GetProcAddress must work
+        //To retrieve the address and I have to assigned to the pointer
+
+Co_Create_Instance* CoCreateInstance = (Co_Create_Instance* ) GetProcAddress(CombaseapiLibrary, "CoCreateInstance");
+
 const CLSID CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator);
 const IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
-void** pEnumerator;
-Co_Create_Instance* CoCreateInstance;
+IMMDeviceEnumerator* pEnumerator = nullptr;
+
+// Initialize COM library
 // NOTE: Create a IMMDeviceEnumerator instance
-if (SUCCEEDED(CoCreateInstance(CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL, IID_IMMDeviceEnumerator, &pEnumerator))){
+if (CoCreateInstance && (SUCCEEDED(CoCreateInstance(CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL, IID_IMMDeviceEnumerator, (void**)pEnumerator)))) {
     // NOTE: pEnumerator is a pointer to the IMMDeviceEnumerator
     // NOTE: Get the IMMDeviceCollection api through IMMDeviceEnumerator::
-    IMMDeviceCollection **ppDevicesl;
-      if (SUCCEEDED( EnumAudioEndpoints(eAll, DEVICE_STATE_ACTIVE, ppDevicesl)))
-      {
+    IMMDeviceCollection *ppDevicesl = nullptr;
+      if (SUCCEEDED(pEnumerator->EnumAudioEndpoints(eAll, DEVICE_STATE_ACTIVE, &ppDevicesl)))
+      {   
+          IMMDevice *ppDevice = nullptr;
 // NOTE: Get the IMMDevice by calling GetDevice
-          IMMDevice **ppDevice;
-          if(SUCCEEDED( Item(0, ppDevice))){
+          if(SUCCEEDED(ppDevicesl->Item(0, &ppDevice))) {
               // NOTE: Activate the IMMDevice
-              void** ppInterface;
-                  if(SUCCEEDED(Activate( IID_IAudioClient, CLSCTX_ALL, NULL, ppInterface))) {
+              IAudioClient* ppInterface1;
+              if(SUCCEEDED(ppDevice->Activate( IID_IAudioClient, CLSCTX_ALL, NULL, (void**)ppInterface1))) {
                       // NOTE: Initialize the IMMDevice
             WAVEFORMATEX* pFormat;
             // NOTE: Now set the format                          
-            WaveFormat->wFormatTag = WAVE_FORMAT_PCM;
-            WaveFormat->nChannels = 2;
-            WaveFormat->nSamplesPerSec = SamplePerSecond;
-            WaveFormat->wBitsPerSample = 16;
+            pFormat->wFormatTag = WAVE_FORMAT_PCM;
+            pFormat->nChannels = 2;
+            pFormat->nSamplesPerSec = SamplePerSecond;
+            pFormat->wBitsPerSample = 16;
             // NOTE: Basic thing: Product of is result of multiplying
-            WaveFormat->nBlockAlign = (WaveFormat->nChannels * WaveFormat->wBitsPerSample)/8;
-            WaveFormat->nAvgBytesPerSec = (WaveFormat->nSamplesPerSec * WaveFormat->nBlockAlign); 
-            WaveFormat->cbSize = 0;
-            if (SUCCEEDED(Initialize(AUDCLNT_SHAREMODE_EXCLUSIVE, 0, hnsBufferDuration, 0, *pFormat, NULL))) {
+            pFormat->nBlockAlign = (pFormat->nChannels * pFormat->wBitsPerSample)/8;
+            pFormat->nAvgBytesPerSec = (pFormat->nSamplesPerSec * pFormat->nBlockAlign); 
+            pFormat->cbSize = 0;
+
+            if (SUCCEEDED(ppInterface1->Initialize(AUDCLNT_SHAREMODE_EXCLUSIVE, 0, 2, 0, pFormat, NULL))) {
                                                  
                       } else {
                           // TODO: Do a diagnoses
-                      }                
-                  } else {
+            }
+            IAudioClient* ppInterface2;
+            if(SUCCEEDED(ppDevice->Activate( IID_IAudioClient, CLSCTX_ALL, NULL, (void**)ppInterface2))) {
+                
+            } else {
+                // TODO: Do a diagnoses                  
+            }
+            
+                  }else {
                   // TODO: Do a diagnoses                  
-              }
-              
-          } else {
-              // TODO: Do a diagnoses
-          }
-          
+              }          
       } else {
           // TODO: Do a diagnoses
       }
-         
         }else{
     // TODO: Do a diagnoses
 }
@@ -153,7 +172,9 @@ if (SUCCEEDED(CoCreateInstance(CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL, IID_I
     }
 
 }
+}
 
+// ============================================================================
 
 internal void win32InitDSound(HWND window, int32 SamplePerSecond, int32 SecondBufferSize) {
     // NOTE:As the mentor said I have the output the sound ahead of a frame
@@ -163,8 +184,7 @@ internal void win32InitDSound(HWND window, int32 SamplePerSecond, int32 SecondBu
     HMODULE DSoundLibrary = LoadLibraryA("dsound.dll");
     if (DSoundLibrary) {        
         // NOTE: Create the DSound object - cooperative
-        direct_sound_create* DirectSoundCreate = (direct_sound_create* )
-            GetProcAddress(DSoundLibrary, "DirectSoundCreate");
+        direct_sound_create* DirectSoundCreate = (direct_sound_create* )            GetProcAddress(DSoundLibrary, "DirectSoundCreate");
         LPDIRECTSOUND DirectSound ;
         if (DirectSoundCreate && SUCCEEDED(DirectSoundCreate(0, &DirectSound,
      0))) {
