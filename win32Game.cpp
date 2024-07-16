@@ -76,6 +76,32 @@ typedef CO_CREATE_INSTANCE (Co_Create_Instance);
 typedef ENUM_AUDIO_ENDPOINTS (Enum_Audio_Endpoints);
 // ==================================================================
 
+
+global_variable bool  Running;
+global_variable HWND Window;
+global_variable RECT ClientRect;
+global_variable HDC DeviceContext;
+global_variable int  XOffset{0}, YOffset{0};
+global_variable LPDIRECTSOUNDBUFFER GlobalSecondBuffer;
+
+const global_variable int Height{720};
+const global_variable int Width{1280};
+
+struct Win32_Offscreen_Buffer{  
+    BITMAPINFO Bitmapinfo;
+    void* BitmapMemory;
+    HBITMAP BitmapHandle;
+    int BitmapWidth;
+    int BitmapHeight;
+    const int BytesPerPixel{4};
+}BackBuffer;
+
+struct win32Dimension{
+    int Height{720};
+    int Width{1280};
+}Dimens;
+
+
 internal void
 win32LoadXInput(void) {
     HMODULE XInputLibrary = LoadLibrary("xinput1_4.dll");
@@ -243,9 +269,8 @@ internal void win32InitDSound(HWND window, int32 SamplePerSecond, int32 SecondBu
                 BufferDescription.dwBufferBytes = SecondBufferSize;                    
                 BufferDescription.lpwfxFormat = &WaveFormat;
                                 
-                LPDIRECTSOUNDBUFFER SecondBuffer;
                 if(SUCCEEDED(DirectSound->CreateSoundBuffer(&BufferDescription,
-                                                          &SecondBuffer, 0))) {
+                                                          &GlobalSecondBuffer, 0))) {
                     OutputDebugStringA("Secondary sound buffer was created successfully/n");                                        
                 }
                 else {
@@ -266,30 +291,6 @@ internal void win32InitDSound(HWND window, int32 SamplePerSecond, int32 SecondBu
     }
 
 }
-
-
-global_variable bool  Running;
-global_variable HWND Window;
-global_variable RECT ClientRect;
-global_variable HDC DeviceContext;
-global_variable int  XOffset{0}, YOffset{0};
-
-const global_variable int Height{720};
-const global_variable int Width{1280};
-
-struct Win32_Offscreen_Buffer{  
-    BITMAPINFO Bitmapinfo;
-    void* BitmapMemory;
-    HBITMAP BitmapHandle;
-    int BitmapWidth;
-    int BitmapHeight;
-    const int BytesPerPixel{4};
-}BackBuffer;
-
-struct win32Dimension{
-    int Height{720};
-    int Width{1280};
-}Dimens;
 
 void GetWindowDimension(HWND Window) {
     GetClientRect(Window, &ClientRect);
@@ -543,6 +544,7 @@ int CALLBACK WinMain
                 int SamplePerSecond = 48000;
                 int BytesPerSample = sizeof(int16)*2;
                 int32 SecondBufferSize = 2*BytesPerSample*SamplePerSecond;
+                int SquareWaveCount {0};
                 //NOTE: we create a second buffer last for 2 second with
                 // sample per second is 4800 and byte per sample is sizeof(int16)
                 win32InitDSound(Window, SamplePerSecond, SecondBufferSize);
@@ -602,9 +604,53 @@ int CALLBACK WinMain
                 Vibration.wRightMotorSpeed = 350;
                 XinputSetState(0, &Vibration);
                 RenderSplendidGradient(&BackBuffer, XOffset, YOffset);
-                DeviceContext = GetDC(Window);
 
-                    
+                // NOTE: One to write one to read just like a chase between
+                // a cat and a mouse. Once you hit play 'cursor position right now
+                // you have to stop the it somewhere otherwise the newly written data
+                // will overwrite what the play cursor want to read.
+
+                // NOTE: The purpose of the lock function is to create a safe area
+                //where the previous written data is proctected from overwriting
+                //
+
+                DWORD PointerToWrite;
+                DWORD BytesToWrite;
+                VOID* Region1;
+                DWORD Region1Size;
+                VOID* Region2;
+                DWORD Region2Size;
+
+                HRESULT Lock( PointerToWrite, BytesToWrite,
+                              Region1, Region1Size,
+                              Region2, Region2Size,
+                              dwFlags
+                             );
+
+                int16* SampleOut = (int16* )ByteToWrite;
+                for (DWORD SampleIndex{0};
+                     SampleIndex < Region1Size;
+                     SampleIndex++){
+                    if (SquareWaveCounter > SquarePeriod){
+                        
+                    }
+                    *SampleIndex += LEFT;
+                    *SampleIndex += RIGHT;
+                }
+
+
+                for (DWORD SampleIndex{0};
+                     SampleIndex < Region2Size;
+                     SampleIndex++){
+                    if (SquareWaveCounter > SquarePeriod){
+                        
+                    }
+                    *SampleIndex += LEFT;
+                    *SampleIndex += RIGHT;
+                }
+
+                
+                DeviceContext = GetDC(Window);                    
                 GetWindowDimension(Window);
                 Win32DisplayBufferWindow(DeviceContext, Dimens.Width, Dimens.Height, &BackBuffer);
                 ReleaseDC(Window, DeviceContext);
