@@ -28,7 +28,7 @@ typedef int32_t int32;
 typedef uint8_t uint8;
 typedef uint16_t uint16;
 typedef uint32_t uint32;
-;
+
 // NOTE: This is all about calling the function in the Xinput.h without the noticing from the compiler
 #define X_INPUT_GET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex,XINPUT_STATE *pState)
 typedef X_INPUT_GET_STATE(x_input_get_state);
@@ -47,12 +47,13 @@ global_variable x_input_get_state* XinputGetState_  = XinputGetStateStub;
 // XinputGetStateStub(DWORD ....) which basically X_INPUT_GET_STATE() function
 #define XinputGetState XinputGetState_
 // This one is to replace the XinputGetState which already been called in Xinput.h
-// with the XinputGetState
+// with the XinputGetState                                                 
 // ==================================================================
 #define X_INPUT_SET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex,XINPUT_VIBRATION *pVibration)
 typedef X_INPUT_SET_STATE(x_input_set_state);
 X_INPUT_SET_STATE(XinputSetStateStub) {
     return (ERROR_DEVICE_NOT_CONNECTED);
+
 }
 global_variable x_input_set_state* XinputSetState_  = XinputSetStateStub;
 #define XinputSetState XinputSetState_
@@ -543,8 +544,12 @@ int CALLBACK WinMain
             Running = true;
                 int SamplePerSecond = 48000;
                 int BytesPerSample = sizeof(int16)*2;
+                // Hert(hz) is cycles per second
                 int32 SecondBufferSize = 2*BytesPerSample*SamplePerSecond;
                 int SquareWaveCount {0};
+                int hz = 256;
+                int SquareWavePeriod = SamplePerSecond/hz;
+                
                 //NOTE: we create a second buffer last for 2 second with
                 // sample per second is 4800 and byte per sample is sizeof(int16)
                 win32InitDSound(Window, SamplePerSecond, SecondBufferSize);
@@ -605,6 +610,7 @@ int CALLBACK WinMain
                 XinputSetState(0, &Vibration);
                 RenderSplendidGradient(&BackBuffer, XOffset, YOffset);
 
+                // ===========================================================
                 // NOTE: One to write one to read just like a chase between
                 // a cat and a mouse. Once you hit play 'cursor position right now
                 // you have to stop the it somewhere otherwise the newly written data
@@ -612,8 +618,9 @@ int CALLBACK WinMain
 
                 // NOTE: The purpose of the lock function is to create a safe area
                 //where the previous written data is proctected from overwriting
-                //
-
+                
+                // NOTE: This part create manually the sound bit by bit not loading them from any file source
+                
                 DWORD PointerToWrite;
                 DWORD BytesToWrite;
                 VOID* Region1;
@@ -627,7 +634,8 @@ int CALLBACK WinMain
                               dwFlags
                              );
 
-                int16* SampleOut = (int16* )ByteToWrite;
+                int16* SampleOut = (int16* )Region1;
+                int Region1SamepleCount;
                 for (DWORD SampleIndex{0};
                      SampleIndex < Region1Size;
                      SampleIndex++){
@@ -636,6 +644,7 @@ int CALLBACK WinMain
                     }
                     *SampleIndex += LEFT;
                     *SampleIndex += RIGHT;
+                    --SquareWaveCounter;
                 }
 
 
@@ -647,9 +656,10 @@ int CALLBACK WinMain
                     }
                     *SampleIndex += LEFT;
                     *SampleIndex += RIGHT;
+                    --SquareWaveCounter;                    ;
                 }
 
-                
+                // =============================================================
                 DeviceContext = GetDC(Window);                    
                 GetWindowDimension(Window);
                 Win32DisplayBufferWindow(DeviceContext, Dimens.Width, Dimens.Height, &BackBuffer);
