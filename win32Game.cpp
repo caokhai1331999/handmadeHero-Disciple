@@ -635,7 +635,7 @@ int CALLBACK WinMain
                              );
 
                 int16* SampleOut = (int16* )Region1;
-                int Region1SamepleCount;
+                int Region1SamepleCount = SamplePerSecond;
                 for (DWORD SampleIndex{0};
                      SampleIndex < Region1Size;
                      SampleIndex++){
