@@ -139,66 +139,66 @@ internal void win32InitCoreAudioSound(HWND window, int32 SamplePerSecond, int32 
         //NOTE: Seem like I didn't understand shit. The GetProcAddress must work
         //To retrieve the address and I have to assigned to the pointer
 
-Co_Create_Instance* CoCreateInstance = (Co_Create_Instance* ) GetProcAddress(CombaseapiLibrary, "CoCreateInstance");
+        Co_Create_Instance* CoCreateInstance = (Co_Create_Instance* ) GetProcAddress(CombaseapiLibrary, "CoCreateInstance");
 
-const CLSID CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator);
-const IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
-IMMDeviceEnumerator* pEnumerator = nullptr;
+        const CLSID CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator);
+        const IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
+        IMMDeviceEnumerator* pEnumerator = nullptr;
 
 // Initialize COM library
 // NOTE: Create a IMMDeviceEnumerator instance
-if (CoCreateInstance && (SUCCEEDED(CoCreateInstance(CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL, IID_IMMDeviceEnumerator, (void**)pEnumerator)))) {
-    // NOTE: pEnumerator is a pointer to the IMMDeviceEnumerator
-    // NOTE: Get the IMMDeviceCollection api through IMMDeviceEnumerator::
-    IMMDeviceCollection *ppDevicesl = nullptr;
-      if (SUCCEEDED(pEnumerator->EnumAudioEndpoints(eAll, DEVICE_STATE_ACTIVE, &ppDevicesl)))
-      {   
-          IMMDevice *ppDevice = nullptr;
+        if (CoCreateInstance && (SUCCEEDED(CoCreateInstance(CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL, IID_IMMDeviceEnumerator, (void**)pEnumerator)))) {
+            // NOTE: pEnumerator is a pointer to the IMMDeviceEnumerator
+            // NOTE: Get the IMMDeviceCollection api through IMMDeviceEnumerator::
+            IMMDeviceCollection *ppDevicesl = nullptr;
+            if (SUCCEEDED(pEnumerator->EnumAudioEndpoints(eAll, DEVICE_STATE_ACTIVE, &ppDevicesl)))
+            {   
+                IMMDevice *ppDevice = nullptr;
 // NOTE: Get the IMMDevice by calling GetDevice
-          if(SUCCEEDED(ppDevicesl->Item(0, &ppDevice))) {
-              // NOTE: Activate the IMMDevice
-              IAudioClient* ppInterface1;
-              if(SUCCEEDED(ppDevice->Activate( IID_IAudioClient, CLSCTX_ALL, NULL, (void**)ppInterface1))) {
-                      // NOTE: Initialize the IMMDevice
-            WAVEFORMATEX* pFormat;
-            // NOTE: Now set the format                          
-            pFormat->wFormatTag = WAVE_FORMAT_PCM;
-            pFormat->nChannels = 2;
-            pFormat->nSamplesPerSec = SamplePerSecond;
-            pFormat->wBitsPerSample = 16;
-            // NOTE: Basic thing: Product of is result of multiplying
-            pFormat->nBlockAlign = (pFormat->nChannels * pFormat->wBitsPerSample)/8;
-            pFormat->nAvgBytesPerSec = (pFormat->nSamplesPerSec * pFormat->nBlockAlign); 
-            pFormat->cbSize = 0;
+                if(SUCCEEDED(ppDevicesl->Item(0, &ppDevice))) {
+                    // NOTE: Activate the IMMDevice
+                    IAudioClient* ppInterface1;
+                    if(SUCCEEDED(ppDevice->Activate( IID_IAudioClient, CLSCTX_ALL, NULL, (void**)ppInterface1))) {
+                        // NOTE: Initialize the IMMDevice
+                        WAVEFORMATEX* pFormat;
+                        // NOTE: Now set the format                          
+                        pFormat->wFormatTag = WAVE_FORMAT_PCM;
+                        pFormat->nChannels = 2;
+                        pFormat->nSamplesPerSec = SamplePerSecond;
+                        pFormat->wBitsPerSample = 16;
+                        // NOTE: Basic thing: Product of is result of multiplying
+                        pFormat->nBlockAlign = (pFormat->nChannels * pFormat->wBitsPerSample)/8;
+                        pFormat->nAvgBytesPerSec = (pFormat->nSamplesPerSec * pFormat->nBlockAlign); 
+                        pFormat->cbSize = 0;
 
-            if (SUCCEEDED(ppInterface1->Initialize(AUDCLNT_SHAREMODE_EXCLUSIVE, 0, 2, 0, pFormat, NULL))) {
+                        if (SUCCEEDED(ppInterface1->Initialize(AUDCLNT_SHAREMODE_EXCLUSIVE, 0, 2, 0, pFormat, NULL))) {
                                                  
-                      } else {
-                          // TODO: Do a diagnoses
-            }
-            IAudioClient* ppInterface2;
-            if(SUCCEEDED(ppDevice->Activate( IID_IAudioClient, CLSCTX_ALL, NULL, (void**)ppInterface2))) {
+                        } else {
+                            // TODO: Do a diagnoses
+                        }
+                        IAudioClient* ppInterface2;
+                        if(SUCCEEDED(ppDevice->Activate( IID_IAudioClient, CLSCTX_ALL, NULL, (void**)ppInterface2))) {
                 
-            } else {
-                // TODO: Do a diagnoses                  
-            }
+                        } else {
+                            // TODO: Do a diagnoses                  
+                        }
             
-                  }else {
-                  // TODO: Do a diagnoses                  
-              }          
-      } else {
-          // TODO: Do a diagnoses
-      }
-        }else{
-    // TODO: Do a diagnoses
-}
-    //         WAVEFORMATEX WaveFormat;                                
+                    }else {
+                        // TODO: Do a diagnoses                  
+                    }          
+                } else {
+                    // TODO: Do a diagnoses
+                }
+            }else{
+                // TODO: Do a diagnoses
+            }
+            //         WAVEFORMATEX WaveFormat;                                
         
-    } else {
+        } else {
             // TODO: Do a diagnostic        
-    }
+        }
 
-}
+    }
 }
 
 // ============================================================================
@@ -214,7 +214,7 @@ internal void win32InitDSound(HWND window, int32 SamplePerSecond, int32 SecondBu
         direct_sound_create* DirectSoundCreate = (direct_sound_create* )            GetProcAddress(DSoundLibrary, "DirectSoundCreate");
         LPDIRECTSOUND DirectSound ;
         if (DirectSoundCreate && SUCCEEDED(DirectSoundCreate(0, &DirectSound,
-     0))) {
+                                                             0))) {
             WAVEFORMATEX WaveFormat;
                     
             WaveFormat.wFormatTag = WAVE_FORMAT_PCM;
@@ -240,28 +240,28 @@ internal void win32InitDSound(HWND window, int32 SamplePerSecond, int32 SecondBu
                 
                 // NOTE: Create a primary buffer
                 if(SUCCEEDED(DirectSound->CreateSoundBuffer(&BufferDescription,
-                &PrimaryBuffer, 0))) {
+                                                            &PrimaryBuffer, 0))) {
                     OutputDebugStringA("Primary sound buffer was create successfully/n");                    
                     BufferDescription.dwBufferBytes = 0;
                     
                     if((PrimaryBuffer->SetFormat(&WaveFormat)) == DS_OK) {
-                    //NOTE: Or
-                    // if(SUCCEEDED(PrimaryBuffer->SetFormat(&WaveFormat))) {
-                    OutputDebugStringA("Primary sound buffer was set/n");                        
+                        //NOTE: Or
+                        // if(SUCCEEDED(PrimaryBuffer->SetFormat(&WaveFormat))) {
+                        OutputDebugStringA("Primary sound buffer was set/n");                        
                         // NOTE: Start it playing
                     }else {
                         // TODO: Do a diagnostic                   
                     }
                 }
                         
-                } else {
-                    // TODO: Do a diagnostic
-                }
+            } else {
+                // TODO: Do a diagnostic
+            }
                     
-                    // =========================================================
+            // =========================================================
 
-                    // NOTE: Then the second one
-                if(SUCCEEDED(DirectSound->SetCooperativeLevel(window,
+            // NOTE: Then the second one
+            if(SUCCEEDED(DirectSound->SetCooperativeLevel(window,
                                                           DSSCL_PRIORITY))) {
                 // NOTE: Create a secondary buffer
                 DSBUFFERDESC BufferDescription = {};
@@ -271,7 +271,7 @@ internal void win32InitDSound(HWND window, int32 SamplePerSecond, int32 SecondBu
                 BufferDescription.lpwfxFormat = &WaveFormat;
                                 
                 if(SUCCEEDED(DirectSound->CreateSoundBuffer(&BufferDescription,
-                                                          &GlobalSecondBuffer, 0))) {
+                                                            &GlobalSecondBuffer, 0))) {
                     OutputDebugStringA("Secondary sound buffer was created successfully/n");                                        
                 }
                 else {
@@ -281,14 +281,14 @@ internal void win32InitDSound(HWND window, int32 SamplePerSecond, int32 SecondBu
             } else {
                 // TODO: Do a diagnostic
             }
-                // ================================================================
+            // ================================================================
         
         } else {
             // TODO: Do a diagnostic
         }
         
     } else {
-            // TODO: Do a diagnostic        
+        // TODO: Do a diagnostic        
     }
 
 }
@@ -542,17 +542,19 @@ int CALLBACK WinMain
         
         if(Window) {
             Running = true;
-                int SamplePerSecond = 48000;
-                int BytesPerSample = sizeof(int16)*2;
-                // Hert(hz) is cycles per second
-                int32 SecondBufferSize = 2*BytesPerSample*SamplePerSecond;
-                int SquareWaveCount {0};
-                int hz = 256;
-                int SquareWavePeriod = SamplePerSecond/hz;
+            int SamplePerSecond = 48000;
+            int BytesPerSample = sizeof(int16)*2;
+            // Hert(hz) is cycles per second
+            int32 SecondBufferSize = 2*BytesPerSample*SamplePerSecond;
+            int SquareWaveCount {0};
+            int hz = 256;
+
+            // Time period per cycle
+            int SquareWavePeriod = SamplePerSecond/hz;
                 
-                //NOTE: we create a second buffer last for 2 second with
-                // sample per second is 4800 and byte per sample is sizeof(int16)
-                win32InitDSound(Window, SamplePerSecond, SecondBufferSize);
+            //NOTE: we create a second buffer last for 2 second with
+            // sample per second is 4800 and byte per sample is sizeof(int16)
+            win32InitDSound(Window, SamplePerSecond, SecondBufferSize);
             while(Running) {
                 MSG Message;
                 while(PeekMessageA(&Message, 0, 0, 0, PM_REMOVE)) {
@@ -598,10 +600,10 @@ int CALLBACK WinMain
                         //     YOffset -= 4;
                         //     OutputDebugStringA("Control Pad Up button triggered\n");
                         // }
-                        
                     } else {
                         // NOTE: The controller is not available
                     };
+                        
                     
                 }
                 XINPUT_VIBRATION Vibration;
@@ -611,59 +613,75 @@ int CALLBACK WinMain
                 RenderSplendidGradient(&BackBuffer, XOffset, YOffset);
 
                 // ===========================================================
-                // NOTE: One to write one to read just like a chase between
-                // a cat and a mouse. Once you hit play 'cursor position right now
-                // you have to stop the it somewhere otherwise the newly written data
-                // will overwrite what the play cursor want to read.
+                // NOTE: The writting cursor create data and the play one will pick
+                // everyone of them and send to sound card to make sound .
+                // One write one read just like a chase between a cat and a mouse.
+                // Once you hit play 'cursor position right now you have to stop
+                // the writting somewhere otherwise the newly date will overwrite
+                // whatever the play cursor want to read
 
                 // NOTE: The purpose of the lock function is to create a safe area
                 //where the previous written data is proctected from overwriting
+                //play buffer one
                 
-                // NOTE: This part create manually the sound bit by bit not loading them from any file source
+                // NOTE: This part create manually the sound bit by bit not loading them from any file source                
                 
                 DWORD PointerToWrite;
                 DWORD BytesToWrite;
-                VOID* Region1;
-                DWORD Region1Size;
-                VOID* Region2;
-                DWORD Region2Size;
+                
+                if(SUCCEEDED(GetCurrentPosition(BytesToWrite,
+                                                PointerToWrite))){
+                    
+                    VOID* Region1;
+                    DWORD Region1Size;
+                    VOID* Region2;
+                    DWORD Region2Size;
 
-                HRESULT Lock( PointerToWrite, BytesToWrite,
-                              Region1, Region1Size,
-                              Region2, Region2Size,
-                              dwFlags
-                             );
+                    if(SUCCEEDED(Lock( PointerToWrite, BytesToWrite,
+                                       &Region1, &Region1Size,
+                                       &Region2, &Region2Size,
+                                       dwFlags))){
 
-                int16* SampleOut = (int16* )Region1;
-                int Region1SamepleCount = SamplePerSecond;
-                for (DWORD SampleIndex{0};
-                     SampleIndex < Region1Size;
-                     SampleIndex++){
-                    if (SquareWaveCounter > SquarePeriod){
-                        
+                        int16* SampleOut = (int16* )Region1;
+                        int Region1SamepleCount = SamplePerSecond;
+                        DWORD SampleCount1 = Region1Size/BytesPerSample;
+                        DWORD SampleCount2 = Region2Size/BytesPerSample;
+                
+                        for (DWORD SampleIndex{0};
+                             SampleIndex < Region1Size;
+                             SampleIndex++){
+                            if (SquareWaveCounter){
+                                SquareWaveCounter = SquareWavePeriod;
+                            }
+                            int16 SampleValue = (SquareWaveCounter >            (SquareWavePeriod/2)) ? 1600 : -1600;
+
+                    
+                            *SampleOut += SampleValue;
+                            *SampleOut += SampleValue;
+                            --SquareWaveCounter;                    
+                        }
+
+                        for (DWORD SampleIndex{0};
+                             SampleIndex < Region2Size;
+                             SampleIndex++){
+
+                            if (SquareWaveCounter){
+                                SquareWaveCounter = SquareWavePeriod;
+                            }
+                            int16 SampleValue = (SquareWaveCounter > (SquareWavePeriod/2)) ? 1600 : -1600;
+                    
+                            *SampleOut += SampleValue;
+                            *SampleOut += SampleValue;
+                            --SquareWaveCounter;                    
+                        }                                        
                     }
-                    *SampleIndex += LEFT;
-                    *SampleIndex += RIGHT;
-                    --SquareWaveCounter;
                 }
-
-
-                for (DWORD SampleIndex{0};
-                     SampleIndex < Region2Size;
-                     SampleIndex++){
-                    if (SquareWaveCounter > SquarePeriod){
-                        
-                    }
-                    *SampleIndex += LEFT;
-                    *SampleIndex += RIGHT;
-                    --SquareWaveCounter;                    ;
-                }
-
                 // =============================================================
                 DeviceContext = GetDC(Window);                    
                 GetWindowDimension(Window);
                 Win32DisplayBufferWindow(DeviceContext, Dimens.Width, Dimens.Height, &BackBuffer);
                 ReleaseDC(Window, DeviceContext);
+                
                 // TODO: Somehow the function didn't receive the increase offset var
                 // to create the animation and somehow there is only one color that is blue
                 if(Message.message != WM_KEYDOWN && Message.message != WM_KEYUP)
@@ -671,6 +689,7 @@ int CALLBACK WinMain
                     XOffset++;
                 }
             }
+            
         }else{
             // TODO: Logging
         }
