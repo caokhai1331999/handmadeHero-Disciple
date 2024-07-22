@@ -239,7 +239,7 @@ internal void win32InitDSound(HWND window, int32 SamplePerSecond, int32 SecondBu
                 LPDIRECTSOUNDBUFFER PrimaryBuffer;
                 
                 // NOTE: Create a primary buffer
-                if(SUCCEEDED(DirectSound->CreateSoundBuffer(&BufferDescription,
+                 if(SUCCEEDED(DirectSound->CreateSoundBuffer(&BufferDescription,
                                                             &PrimaryBuffer, 0))) {
                     OutputDebugStringA("Primary sound buffer was create successfully/n");                    
                     BufferDescription.dwBufferBytes = 0;
@@ -542,6 +542,7 @@ int CALLBACK WinMain
         
         if(Window) {
             Running = true;
+            uint32 SampleIndex;
             int SamplePerSecond = 48000;
             int BytesPerSample = sizeof(int16)*2;
             // Hert(hz) is cycles per second
@@ -637,23 +638,44 @@ int CALLBACK WinMain
                     VOID* Region2;
                     DWORD Region2Size;
 
+                    DWORD PlayCursor;
+                    DWORD WriteCursor;
+                    
                     if(SUCCEEDED(Lock( PointerToWrite, BytesToWrite,
                                        &Region1, &Region1Size,
                                        &Region2, &Region2Size,
                                        dwFlags))){
 
+                        DWORD ByteToLock = SampleIndex*SamplePerSecond%SecondBufferSize;
+                        DWORD ByteToWrite =;
+                        
+                        if(ByteToLock > PlayCursor){
+                            ByteToWrite = SecondBufferSize - ByteToLock;
+                            // Exclude out the lock area and then increment
+                            // by play cursor
+                            ByteToWrite += PlayCursor;
+                        } else {
+                            // In this case, The ByteToWrite is 0 and wait for the
+                            // next turn of the loop
+                            ByteToWrite = PlayCursor - ByteToLock;
+                        }
+                        
                         int16* SampleOut = (int16* )Region1;
                         int Region1SamepleCount = SamplePerSecond;
                         DWORD SampleCount1 = Region1Size/BytesPerSample;
                         DWORD SampleCount2 = Region2Size/BytesPerSample;
-                
+
+                        // NOTE: Basically what we want to do is remembering where
+                        // we were and how many sound we're outputting and able
+                        // to lock the buffer at whatever we left off
+                        
                         for (DWORD SampleIndex{0};
                              SampleIndex < Region1Size;
                              SampleIndex++){
                             if (SquareWaveCounter){
                                 SquareWaveCounter = SquareWavePeriod;
                             }
-                            int16 SampleValue = (SquareWaveCounter >            (SquareWavePeriod/2)) ? 1600 : -1600;
+                            int16 SampleValue = ((SampleIndex /            (SquareWavePeriod/2))% 2) ? 1600 : -1600;
 
                     
                             *SampleOut += SampleValue;
@@ -661,6 +683,7 @@ int CALLBACK WinMain
                             --SquareWaveCounter;                    
                         }
 
+                        int16* SampleOut = (int16* )Region2;                        
                         for (DWORD SampleIndex{0};
                              SampleIndex < Region2Size;
                              SampleIndex++){
@@ -668,8 +691,8 @@ int CALLBACK WinMain
                             if (SquareWaveCounter){
                                 SquareWaveCounter = SquareWavePeriod;
                             }
-                            int16 SampleValue = (SquareWaveCounter > (SquareWavePeriod/2)) ? 1600 : -1600;
-                    
+                            
+                            int16 SampleValue = ((SampleIndex /            (SquareWavePeriod/2))% 2) ? 1600 : -1600;                    
                             *SampleOut += SampleValue;
                             *SampleOut += SampleValue;
                             --SquareWaveCounter;                    
