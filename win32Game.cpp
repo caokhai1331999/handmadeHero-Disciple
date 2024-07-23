@@ -177,6 +177,8 @@ internal void win32InitCoreAudioSound(HWND window, int32 SamplePerSecond, int32 
                             // TODO: Do a diagnoses
                         }
                         IAudioClient* ppInterface2;
+                        // If I wasn't wrong the interface stand for buffer
+                        // NOTE: Then may be get buffer size
                         if(SUCCEEDED(ppDevice->Activate( IID_IAudioClient, CLSCTX_ALL, NULL, (void**)ppInterface2))) {
                 
                         } else {
