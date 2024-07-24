@@ -563,7 +563,8 @@ int CALLBACK WinMain
             } else {
                 OutputDebugStringA("Sound somehow  failed to play");                            
             }
-            ;
+            // NOTE: I don't know should I do this if else stuff or not!!!!
+           
             while(Running) {
                 MSG Message;
                 while(PeekMessageA(&Message, 0, 0, 0, PM_REMOVE)) {
