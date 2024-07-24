@@ -558,6 +558,12 @@ int CALLBACK WinMain
             //NOTE: we create a second buffer last for 2 second with
             // sample per second is 4800 and byte per sample is sizeof(int16)
             win32InitDSound(Window, SamplePerSecond, SecondBufferSize);
+            if(SUCCEEDED(GlobalSecondBuffer->Play( 0, 0, DSBPLAY_LOOPING))){
+                OutputDebugStringA("Sound is playing");
+            } else {
+                OutputDebugStringA("Sound somehow  failed to play");                            
+            }
+            ;
             while(Running) {
                 MSG Message;
                 while(PeekMessageA(&Message, 0, 0, 0, PM_REMOVE)) {
@@ -632,8 +638,8 @@ int CALLBACK WinMain
                 DWORD PointerToWrite;
                 DWORD BytesToWrite;
                 
-                if(SUCCEEDED(GetCurrentPosition(BytesToWrite,
-                                                PointerToWrite))){
+                if(SUCCEEDED(GlobalSecondBuffer->GetCurrentPosition(&BytesToWrite,
+                                                &PointerToWrite))){
                     
                     VOID* Region1;
                     DWORD Region1Size;
@@ -643,18 +649,18 @@ int CALLBACK WinMain
                     DWORD PlayCursor;
                     DWORD WriteCursor;
                     
-                    if(SUCCEEDED(Lock( PointerToWrite, BytesToWrite,
+                    if(SUCCEEDED(GlobalSecondBuffer->Lock( PointerToWrite, BytesToWrite,
                                        &Region1, &Region1Size,
                                        &Region2, &Region2Size,
-                                       dwFlags))){
+                                       DSBLOCK_FROMWRITECURSOR))){
 
                         DWORD ByteToLock = SampleIndex*SamplePerSecond%SecondBufferSize;
-                        DWORD ByteToWrite =;
+                        DWORD ByteToWrite;
                         
                         if(ByteToLock > PlayCursor){
-                            ByteToWrite = SecondBufferSize - ByteToLock;
                             // Exclude out the lock area and then increment
                             // by play cursor
+                            ByteToWrite = SecondBufferSize - ByteToLock;
                             ByteToWrite += PlayCursor;
                         } else {
                             // In this case, The ByteToWrite is 0 and wait for the
@@ -662,10 +668,8 @@ int CALLBACK WinMain
                             ByteToWrite = PlayCursor - ByteToLock;
                         }
                         
+                        DWORD Region1SampleCount = Region1Size/BytesPerSample;
                         int16* SampleOut = (int16* )Region1;
-                        int Region1SamepleCount = SamplePerSecond;
-                        DWORD SampleCount1 = Region1Size/BytesPerSample;
-                        DWORD SampleCount2 = Region2Size/BytesPerSample;
 
                         // NOTE: Basically what we want to do is remembering where
                         // we were and how many sound we're outputting and able
@@ -674,31 +678,31 @@ int CALLBACK WinMain
                         for (DWORD SampleIndex{0};
                              SampleIndex < Region1Size;
                              SampleIndex++){
-                            if (SquareWaveCounter){
-                                SquareWaveCounter = SquareWavePeriod;
-                            }
-                            int16 SampleValue = ((SampleIndex /            (SquareWavePeriod/2))% 2) ? 1600 : -1600;
+                            // if (SquareWaveCounter){
+                            //     SquareWaveCounter = SquareWavePeriod;
+                            // }
+                            int16 SampleValue = ((SampleIndex++ /            (SquareWavePeriod/2))% 2) ? 1600 : -1600;
 
                     
-                            *SampleOut += SampleValue;
-                            *SampleOut += SampleValue;
-                            --SquareWaveCounter;                    
+                            *SampleOut++ = SampleValue;
+                            *SampleOut++ = SampleValue;
+                            // --SquareWaveCounter;                    
                         }
-
-                        int16* SampleOut = (int16* )Region2;                        
+                        DWORD Region2SampleCount = Region2Size/BytesPerSample;
+                        SampleOut = (int16* )Region2;                        
                         for (DWORD SampleIndex{0};
                              SampleIndex < Region2Size;
                              SampleIndex++){
 
-                            if (SquareWaveCounter){
-                                SquareWaveCounter = SquareWavePeriod;
-                            }
+                            // if (SquareWaveCounter){
+                            //     SquareWaveCounter = SquareWavePeriod;
+                            // }
                             
-                            int16 SampleValue = ((SampleIndex /            (SquareWavePeriod/2))% 2) ? 1600 : -1600;                    
-                            *SampleOut += SampleValue;
-                            *SampleOut += SampleValue;
-                            --SquareWaveCounter;                    
-                        }                                        
+                            int16 SampleValue = ((SampleIndex++ /            (SquareWavePeriod/2))% 2) ? 1600 : -1600;
+                            *SampleOut++ = SampleValue;
+                            *SampleOut++ = SampleValue;
+                            // --SquareWaveCounter;                    
+                        }
                     }
                 }
                 // =============================================================
