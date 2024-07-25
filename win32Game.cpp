@@ -25,6 +25,9 @@ typedef int16_t int16;
 typedef int8_t int8;
 typedef int32_t int32;
 
+typedef bool bool16;
+typedef bool bool32;
+
 typedef uint8_t uint8;
 typedef uint16_t uint16;
 typedef uint32_t uint32;
@@ -551,18 +554,14 @@ int CALLBACK WinMain
             int32 SecondBufferSize = 2*BytesPerSample*SamplePerSecond;
             int SquareWaveCount {0};
             int hz = 256;
-
+            int ToneVolumn {3500};
             // Time period per cycle
             int SquareWavePeriod = SamplePerSecond/hz;
+            bool32 SoundIsPlaying = false;
                 
             //NOTE: we create a second buffer last for 2 second with
             // sample per second is 4800 and byte per sample is sizeof(int16)
             win32InitDSound(Window, SamplePerSecond, SecondBufferSize);
-            if(SUCCEEDED(GlobalSecondBuffer->Play( 0, 0, DSBPLAY_LOOPING))){
-                OutputDebugStringA("Sound is playing");
-            } else {
-                OutputDebugStringA("Sound somehow  failed to play");                            
-            }
             // NOTE: I don't know should I do this if else stuff or not!!!!
            
             while(Running) {
@@ -657,8 +656,11 @@ int CALLBACK WinMain
 
                         DWORD ByteToLock = SampleIndex*SamplePerSecond%SecondBufferSize;
                         DWORD ByteToWrite;
-                        
-                        if(ByteToLock > PlayCursor){
+                        // TODO: Collapse these two loops
+                        if (ByteToLock ==  PlayCursor){
+                            ByteToLock = SecondBufferSize;
+                        }
+                        else if(ByteToLock > PlayCursor){
                             // Exclude out the lock area and then increment
                             // by play cursor
                             ByteToWrite = SecondBufferSize - ByteToLock;
@@ -717,6 +719,15 @@ int CALLBACK WinMain
                 if(Message.message != WM_KEYDOWN && Message.message != WM_KEYUP)
                 {
                     XOffset++;
+                }
+
+                if(!SoundIsPlaying){
+                    if(SUCCEEDED(GlobalSecondBuffer->Play( 0, 0, DSBPLAY_LOOPING))){
+                        OutputDebugStringA("Sound is playing");
+                    } else {
+                        OutputDebugStringA("Sound somehow  failed to play");                            
+                    }
+
                 }
             }
             
