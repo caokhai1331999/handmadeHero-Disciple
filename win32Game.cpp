@@ -32,6 +32,9 @@ typedef uint8_t uint8;
 typedef uint16_t uint16;
 typedef uint32_t uint32;
 
+typedef real32 float;
+typedef real64 double;
+
 // NOTE: This is all about calling the function in the Xinput.h without the noticing from the compiler
 #define X_INPUT_GET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex,XINPUT_STATE *pState)
 typedef X_INPUT_GET_STATE(x_input_get_state);
@@ -352,6 +355,7 @@ internal void Win32ResizeDIBSection(Win32_Offscreen_Buffer* OBuffer, int Width, 
     OBuffer->Bitmapinfo.bmiHeader.biPlanes = 1;
     OBuffer->Bitmapinfo.bmiHeader.biBitCount = 32;
     OBuffer->Bitmapinfo.bmiHeader.biCompression = BI_RGB;
+        
              
     BitMapMemorySize = OBuffer->BytesPerPixel*(OBuffer->BitmapWidth*OBuffer->BitmapHeight);
     OBuffer->BitmapMemory = VirtualAlloc(0 ,BitMapMemorySize ,MEM_COMMIT, PAGE_READWRITE);
@@ -367,7 +371,6 @@ internal void Win32ResizeDIBSection(Win32_Offscreen_Buffer* OBuffer, int Width, 
 
 internal void Win32DisplayBufferWindow(HDC DeviceContext, int WindowWidth, int WindowHeight, Win32_Offscreen_Buffer* OBuffer ) {
     // the Source and the Destination rectangle means
-        
     StretchDIBits(
         DeviceContext,
         0,0,OBuffer->BitmapWidth, OBuffer->BitmapHeight, // Source rectangle
@@ -552,10 +555,11 @@ int CALLBACK WinMain
             int BytesPerSample = sizeof(int16)*2;
             // Hert(hz) is cycles per second
             int32 SecondBufferSize = 2*BytesPerSample*SamplePerSecond;
+            uint32 RunningSampleIndex = 0;
             int SquareWaveCount {0};
             int hz = 256;
             int ToneVolumn {3500};
-            // Time period per cycle
+            // Sample per cycle is SquareWave Period
             int SquareWavePeriod = SamplePerSecond/hz;
             bool32 SoundIsPlaying = false;
                 
@@ -634,43 +638,38 @@ int CALLBACK WinMain
                 //play buffer one
                 
                 // NOTE: This part create manually the sound bit by bit not loading them from any file source                
+
+                DWORD PlayCursor;
+                DWORD WriteCursor;
+
+                // NOTE: Still don't know why this happened
+                if(SUCCEEDED(GlobalSecondBuffer->GetCurrentPosition(&PlayCursor,
+                                                &WriteCursor))){
+                DWORD ByteToLock = RunningSampleIndex*SamplePerSecond%SecondBufferSize;
                 
-                DWORD PointerToWrite;
-                DWORD BytesToWrite;
-                
-                if(SUCCEEDED(GlobalSecondBuffer->GetCurrentPosition(&BytesToWrite,
-                                                &PointerToWrite))){
-                    
+                DWORD ByteToWrite;
+                // TODO: Collapse these two loops
+                if (ByteToLock ==  PlayCursor){
+                    ByteToLock = SecondBufferSize;
+                }
+                else if(ByteToLock > PlayCursor){
+                    // Exclude out the lock area and then increment
+                    // by play cursor
+                    ByteToWrite = (SecondBufferSize - ByteToLock);
+                    ByteToWrite += PlayCursor;
+                } else {
+                    // In this case, The ByteToWrite is 0 and wait for the
+                    // next turn of the loop
+                    ByteToWrite = PlayCursor - ByteToLock;
+                }
                     VOID* Region1;
                     DWORD Region1Size;
                     VOID* Region2;
                     DWORD Region2Size;
 
-                    DWORD PlayCursor;
-                    DWORD WriteCursor;
                     
-                    if(SUCCEEDED(GlobalSecondBuffer->Lock( PointerToWrite, BytesToWrite,
-                                       &Region1, &Region1Size,
-                                       &Region2, &Region2Size,
-                                       DSBLOCK_FROMWRITECURSOR))){
-
-                        DWORD ByteToLock = SampleIndex*SamplePerSecond%SecondBufferSize;
-                        DWORD ByteToWrite;
-                        // TODO: Collapse these two loops
-                        if (ByteToLock ==  PlayCursor){
-                            ByteToLock = SecondBufferSize;
-                        }
-                        else if(ByteToLock > PlayCursor){
-                            // Exclude out the lock area and then increment
-                            // by play cursor
-                            ByteToWrite = SecondBufferSize - ByteToLock;
-                            ByteToWrite += PlayCursor;
-                        } else {
-                            // In this case, The ByteToWrite is 0 and wait for the
-                            // next turn of the loop
-                            ByteToWrite = PlayCursor - ByteToLock;
-                        }
-                        
+                    if(SUCCEEDED(GlobalSecondBuffer->Lock(ByteToLock, ByteToWrite, &Region1, &Region1Size,&Region2, &Region2Size,DSBLOCK_FROMWRITECURSOR))){
+                      
                         DWORD Region1SampleCount = Region1Size/BytesPerSample;
                         int16* SampleOut = (int16* )Region1;
 
@@ -679,35 +678,36 @@ int CALLBACK WinMain
                         // to lock the buffer at whatever we left off
                         
                         for (DWORD SampleIndex{0};
-                             SampleIndex < Region1Size;
+                             SampleIndex < Region1SampleCount;
                              SampleIndex++){
                             // if (SquareWaveCounter){
                             //     SquareWaveCounter = SquareWavePeriod;
                             // }
-                            int16 SampleValue = ((SampleIndex++ /            (SquareWavePeriod/2))% 2) ? 1600 : -1600;
+                            int16 SampleValue = ((RunningSampleIndex++ /            (SquareWavePeriod/2))% 2) ? ToneVolumn : -ToneVolumn;
 
                     
                             *SampleOut++ = SampleValue;
                             *SampleOut++ = SampleValue;
                             // --SquareWaveCounter;                    
                         }
+                        
                         DWORD Region2SampleCount = Region2Size/BytesPerSample;
+                        
                         SampleOut = (int16* )Region2;                        
                         for (DWORD SampleIndex{0};
-                             SampleIndex < Region2Size;
-                             SampleIndex++){
-
-                            // if (SquareWaveCounter){
-                            //     SquareWaveCounter = SquareWavePeriod;
-                            // }
-                            
-                            int16 SampleValue = ((SampleIndex++ /            (SquareWavePeriod/2))% 2) ? 1600 : -1600;
+                             SampleIndex < Region2SampleCount;
+                             SampleIndex++){                            
+                            int16 SampleValue = ((RunningSampleIndex++/          (SquareWavePeriod/2))% 2) ? ToneVolumn : -ToneVolumn;
                             *SampleOut++ = SampleValue;
                             *SampleOut++ = SampleValue;
-                            // --SquareWaveCounter;                    
                         }
+                        GlobalSecondBuffer->Unlock(Region1, Region1Size, Region2, Region2Size);
                     }
-                }
+
+                }                                    
+                
+                
+                
                 // =============================================================
                 DeviceContext = GetDC(Window);                    
                 GetWindowDimension(Window);
@@ -724,6 +724,7 @@ int CALLBACK WinMain
                 if(!SoundIsPlaying){
                     if(SUCCEEDED(GlobalSecondBuffer->Play( 0, 0, DSBPLAY_LOOPING))){
                         OutputDebugStringA("Sound is playing");
+                        SoundIsPlaying = true;
                     } else {
                         OutputDebugStringA("Sound somehow  failed to play");                            
                     }
