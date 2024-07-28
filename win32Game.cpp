@@ -6,11 +6,11 @@
    $Notice: (C) Copyright 2024 by Cao Khai, Inc. All Rights Reserved. $
    ======================================================================== */
 #include <iostream>
+#include <cmath>
 #include <Windows.h>
-#include <stdint.h>
 #include <xinput.h>
-#include <combaseapi.h>
 #include <DSound.h>
+#include <combaseapi.h>
 #include <mmdeviceapi.h>
 #include <endpointvolume.h>
 #include <audioclient.h>
@@ -32,8 +32,8 @@ typedef uint8_t uint8;
 typedef uint16_t uint16;
 typedef uint32_t uint32;
 
-typedef real32 float;
-typedef real64 double;
+typedef float real32;
+typedef double real64;
 
 // NOTE: This is all about calling the function in the Xinput.h without the noticing from the compiler
 #define X_INPUT_GET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex,XINPUT_STATE *pState)
@@ -45,8 +45,8 @@ typedef X_INPUT_GET_STATE(x_input_get_state);
 // for example: x_input_get_state _XinputgetState()
 X_INPUT_GET_STATE(XinputGetStateStub) {
     return (ERROR_DEVICE_NOT_CONNECTED);
-}
 // NOTE: But the rules of C does not allow this(x_input_get_state _XinputGetStateStub() {//do something;})
+}
 // so we use this for function pointer
 global_variable x_input_get_state* XinputGetState_  = XinputGetStateStub;
 // So finally we have a pointer name XinputGetState point to the function
@@ -558,7 +558,7 @@ int CALLBACK WinMain
             uint32 RunningSampleIndex = 0;
             int SquareWaveCount {0};
             int hz = 256;
-            int ToneVolumn {3500};
+            int ToneVolume {3500};
             // Sample per cycle is SquareWave Period
             int SquareWavePeriod = SamplePerSecond/hz;
             bool32 SoundIsPlaying = false;
@@ -683,9 +683,11 @@ int CALLBACK WinMain
                             // if (SquareWaveCounter){
                             //     SquareWaveCounter = SquareWavePeriod;
                             // }
-                            int16 SampleValue = ((RunningSampleIndex++ /            (SquareWavePeriod/2))% 2) ? ToneVolumn : -ToneVolumn;
-
-                    
+                            // NOTE: This formula is to produce square wave
+                            // int16 SampleValue = ((RunningSampleIndex++ /            (SquareWavePeriod/2))% 2) ? ToneVolume : -ToneVolume;
+                            real32 t = RunningSampleIndex;
+                            real32 SineValue = sinf(t);
+                            int16 SampleValue = (int16)(sinevalue * ToneVolume);                    
                             *SampleOut++ = SampleValue;
                             *SampleOut++ = SampleValue;
                             // --SquareWaveCounter;                    
@@ -696,8 +698,9 @@ int CALLBACK WinMain
                         SampleOut = (int16* )Region2;                        
                         for (DWORD SampleIndex{0};
                              SampleIndex < Region2SampleCount;
-                             SampleIndex++){                            
-                            int16 SampleValue = ((RunningSampleIndex++/          (SquareWavePeriod/2))% 2) ? ToneVolumn : -ToneVolumn;
+                             SampleIndex++){
+                            
+                            // int16 SampleValue = ((RunningSampleIndex++/          (SquareWavePeriod/2))% 2) ? ToneVolume : -ToneVolume;
                             *SampleOut++ = SampleValue;
                             *SampleOut++ = SampleValue;
                         }
