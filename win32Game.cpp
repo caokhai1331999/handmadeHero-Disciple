@@ -21,6 +21,8 @@ using namespace std;
 #define local_persist static
 #define global_variable static
 
+#define Pi32 3.14159265359f
+
 typedef int16_t int16;
 typedef int8_t int8;
 typedef int32_t int32;
@@ -560,12 +562,11 @@ int CALLBACK WinMain
             int hz = 256;
             int ToneVolume {3500};
             // Sample per cycle is SquareWave Period
-            int SquareWavePeriod = SamplePerSecond/hz;
-            bool32 SoundIsPlaying = false;
-                
+            int WavePeriod = SamplePerSecond/hz;
             //NOTE: we create a second buffer last for 2 second with
             // sample per second is 4800 and byte per sample is sizeof(int16)
             win32InitDSound(Window, SamplePerSecond, SecondBufferSize);
+            bool32 SoundIsPlaying = false;                                        
             // NOTE: I don't know should I do this if else stuff or not!!!!
            
             while(Running) {
@@ -643,20 +644,27 @@ int CALLBACK WinMain
                 DWORD WriteCursor;
 
                 // NOTE: Still don't know why this happened
-                if(SUCCEEDED(GlobalSecondBuffer->GetCurrentPosition(&PlayCursor,
-                                                &WriteCursor))){
-                DWORD ByteToLock = RunningSampleIndex*SamplePerSecond%SecondBufferSize;
+                if(!SoundIsPlaying && SUCCEEDED(GlobalSecondBuffer->GetCurrentPosition(&PlayCursor,
+                                                &WriteCursor))) {
+                    DWORD ByteToLock = (RunningSampleIndex* BytesPerSample)*% SecondBufferSize;
                 
                 DWORD ByteToWrite;
                 // TODO: Collapse these two loops
-                if (ByteToLock ==  PlayCursor){
-                    ByteToLock = SecondBufferSize;
+                if (ByteToLock == PlayCursor){
+                    // BUGS Lies here
+                    // SomeHow ByteToWrite always equal to SecondBufferSize
+                    // Cause the compare operator happens before PlayCursor
+                    // increment
+                    if(!SoundIsPlaying)
+                    {
+                        ByteToWrite = SecondBufferSize;
+                    }
                 }
                 else if(ByteToLock > PlayCursor){
                     // Exclude out the lock area and then increment
                     // by play cursor
-                    ByteToWrite = (SecondBufferSize - ByteToLock);
-                    ByteToWrite += PlayCursor;
+                    ByteToWrite = SecondBufferSize - ByteToLock; // Region 1
+                    ByteToWrite += PlayCursor;                   // Region 2
                 } else {
                     // In this case, The ByteToWrite is 0 and wait for the
                     // next turn of the loop
@@ -670,8 +678,8 @@ int CALLBACK WinMain
                     
                     if(SUCCEEDED(GlobalSecondBuffer->Lock(ByteToLock, ByteToWrite, &Region1, &Region1Size,&Region2, &Region2Size,DSBLOCK_FROMWRITECURSOR))){
                       
-                        DWORD Region1SampleCount = Region1Size/BytesPerSample;
                         int16* SampleOut = (int16* )Region1;
+                        DWORD Region1SampleCount = Region1Size/BytesPerSample;
 
                         // NOTE: Basically what we want to do is remembering where
                         // we were and how many sound we're outputting and able
@@ -685,33 +693,47 @@ int CALLBACK WinMain
                             // }
                             // NOTE: This formula is to produce square wave
                             // int16 SampleValue = ((RunningSampleIndex++ /            (SquareWavePeriod/2))% 2) ? ToneVolume : -ToneVolume;
-                            real32 t = RunningSampleIndex;
-                            real32 SineValue = sinf(t);
-                            int16 SampleValue = (int16)(sinevalue * ToneVolume);                    
+                            real32 t = 2.0f*Pi32* (real32)RunningSampleIndex/(real32)WavePeriod;
+                            real32 SineValue = sinf(t);            
+                            int16 SampleValue = (int16)(SineValue * ToneVolume);
                             *SampleOut++ = SampleValue;
                             *SampleOut++ = SampleValue;
-                            // --SquareWaveCounter;                    
+                            // --SquareWaveCounter;
+                            ++RunningSampleIndex;
                         }
                         
-                        DWORD Region2SampleCount = Region2Size/BytesPerSample;
-                        
                         SampleOut = (int16* )Region2;                        
+                        DWORD Region2SampleCount = Region2Size/BytesPerSample;                        
                         for (DWORD SampleIndex{0};
                              SampleIndex < Region2SampleCount;
                              SampleIndex++){
                             
                             // int16 SampleValue = ((RunningSampleIndex++/          (SquareWavePeriod/2))% 2) ? ToneVolume : -ToneVolume;
-                            *SampleOut++ = SampleValue;
-                            *SampleOut++ = SampleValue;
-                        }
-                        GlobalSecondBuffer->Unlock(Region1, Region1Size, Region2, Region2Size);
-                    }
+                            real32 t = 2.0f*Pi32* (real32)RunningSampleIndex/(real32)WavePeriod;
+                            
+                            real32 SineValue = sinf(t);            
+                            int16 SampleValue = (int16)(SineValue * ToneVolume);
 
-                }                                    
-                
+                            *SampleOut++ = SampleValue;
+                            *SampleOut++ = SampleValue;
+                            ++RunningSampleIndex;                            
+                        }                                                GlobalSecondBuffer->Unlock(Region1, Region1Size, Region2, Region2Size);
+                    }
+                }                                                    
                 
                 
                 // =============================================================
+                if(Message.message != WM_KEYDOWN && Message.message != WM_KEYUP)
+                {
+                    XOffset++;
+                }
+                
+                if(!SoundIsPlaying){
+                    GlobalSecondBuffer->Play( 0, 0, DSBPLAY_LOOPING);
+                    OutputDebugStringA("Sound is playing");
+                    SoundIsPlaying = true;
+                }
+                
                 DeviceContext = GetDC(Window);                    
                 GetWindowDimension(Window);
                 Win32DisplayBufferWindow(DeviceContext, Dimens.Width, Dimens.Height, &BackBuffer);
@@ -719,20 +741,6 @@ int CALLBACK WinMain
                 
                 // TODO: Somehow the function didn't receive the increase offset var
                 // to create the animation and somehow there is only one color that is blue
-                if(Message.message != WM_KEYDOWN && Message.message != WM_KEYUP)
-                {
-                    XOffset++;
-                }
-
-                if(!SoundIsPlaying){
-                    if(SUCCEEDED(GlobalSecondBuffer->Play( 0, 0, DSBPLAY_LOOPING))){
-                        OutputDebugStringA("Sound is playing");
-                        SoundIsPlaying = true;
-                    } else {
-                        OutputDebugStringA("Sound somehow  failed to play");                            
-                    }
-
-                }
             }
             
         }else{
