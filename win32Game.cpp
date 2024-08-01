@@ -117,12 +117,13 @@ struct win32_Sound_OutPut{
     // Hert(hz) is cycles per second
     int32 SecondBufferSize;
     uint32 RunningSampleIndex;
+    real32 tsine;
     int hz;
     int WavePeriod;
     int SquareWaveCount;
     int ToneVolume;
     // Sample per cycle is SquareWave Period    
-};
+}SoundOutPut;
 
 internal void
 win32LoadXInput(void) {
@@ -215,7 +216,6 @@ internal void win32InitCoreAudioSound(HWND window, int32 SamplePerSecond, int32 
             }else{
                 // TODO: Do a diagnoses
             }
-            //         WAVEFORMATEX WaveFormat;                                
         
         } else {
             // TODO: Do a diagnostic        
@@ -334,17 +334,19 @@ internal void Win32FillSoundBuffer(win32_Sound_OutPut* SoundOutPut, DWORD ByteTo
                         for (DWORD SampleIndex{0};
                              SampleIndex < Region1SampleCount;
                              SampleIndex++){
+
                             // if (SquareWaveCounter){
                             //     SquareWaveCounter = SquareWavePeriod;
                             // }
                             // NOTE: This formula is to produce square wave
                             // int16 SampleValue = ((RunningSampleIndex++ /            (SquareWavePeriod/2))% 2) ? ToneVolume : -ToneVolume;
-                            real32 t = 2.0f*Pi32* (real32)SoundOutPut->RunningSampleIndex/(real32)SoundOutPut->WavePeriod;
-                            real32 SineValue = sinf(t);            
+                            
+                            real32 SineValue = sinf(SoundOutPut->tsine);            
                             int16 SampleValue = (int16)(SineValue * SoundOutPut->ToneVolume);
                             *SampleOut++ = SampleValue;
                             *SampleOut++ = SampleValue;
                             // --SquareWaveCounter;
+                            SoundOutPut->tsine += 2.0f*Pi32* 1.0f/(real32)SoundOutPut->WavePeriod;
                             ++SoundOutPut->RunningSampleIndex;
                         }
                         
@@ -355,12 +357,14 @@ internal void Win32FillSoundBuffer(win32_Sound_OutPut* SoundOutPut, DWORD ByteTo
                              SampleIndex++){
                             
                             // int16 SampleValue = ((RunningSampleIndex++/          (SquareWavePeriod/2))% 2) ? ToneVolume : -ToneVolume;
-                            real32 t = 2.0f*Pi32* (real32)SoundOutPut->RunningSampleIndex/(real32)SoundOutPut->WavePeriod;                            
-                            real32 SineValue = sinf(t);            
+                            real32 SineValue = sinf(SoundOutPut->tsine);            
                             int16 SampleValue = (int16)(SineValue * SoundOutPut->ToneVolume);
 
                             *SampleOut++ = SampleValue;
-                            *SampleOut++ = SampleValue;                         ++SoundOutPut->RunningSampleIndex;                            
+                            *SampleOut++ = SampleValue;
+                            // NOTE: This is the way to keep tracking this var
+                            // in my synth
+                            SoundOutPut->tsine += 2.0f*Pi32* 1.0f/(real32)SoundOutPut->WavePeriod;                            ++SoundOutPut->RunningSampleIndex;                            
                         }                                                GlobalSecondBuffer->Unlock(Region1, Region1Size, Region2, Region2Size);
                     }
 
@@ -371,8 +375,6 @@ void GetWindowDimension(HWND Window) {
     Dimens.Width = ClientRect.right - ClientRect.left;
     Dimens.Height= ClientRect.bottom - ClientRect.top;
 }
-
-// TODO: Now time to move on to input/output section 
 
 void RenderSplendidGradient(Win32_Offscreen_Buffer* OBuffer,int XOffset, int YOffset) {
     // RR GG BB
@@ -425,11 +427,6 @@ internal void Win32ResizeDIBSection(Win32_Offscreen_Buffer* OBuffer, int Width, 
     BitMapMemorySize = OBuffer->BytesPerPixel*(OBuffer->BitmapWidth*OBuffer->BitmapHeight);
     OBuffer->BitmapMemory = VirtualAlloc(0 ,BitMapMemorySize ,MEM_COMMIT, PAGE_READWRITE);
 }
-
-// TODO: Cause of unintentionally deletion of code
-// first thing first make window and then create the
-// receive and translate message DONE!
-// Then animate back buffer using createDIBSection and strechDIBit
 
 // NOTE: Keep in mind that try to all what you need to release back to memory
 // in a total thing so that I can release it in aggregate
@@ -534,10 +531,20 @@ LRESULT CALLBACK MainWindowCallBack(
                 }
 
                 else if(vkCode == VK_RIGHT) {
-                    XOffset += 10;
+                    XOffset += 10;                    
                 }
-            }
-        }break;
+                
+                else if(vkCode == VK_TAB) {
+                    if(SoundOutPut.hz == 256){
+                        SoundOutPut.hz = 512;
+                    } else {
+                        SoundOutPut.hz = 256;
+                    }
+                    SoundOutPut.WavePeriod = SoundOutPut.SamplePerSecond/SoundOutPut.hz;
+                    OutputDebugStringA("TAB button hitted \n");                  
+                }
+            }                
+            }break;
 
         case WM_DESTROY:
         {
@@ -618,9 +625,10 @@ int CALLBACK WinMain
             //NOTE: we create a second buffer last for 2 second with
             // sample per second is 4800 and byte per sample is sizeof(int16)
 
-            win32_Sound_OutPut SoundOutPut = {};
+            // win32_Sound_OutPut SoundOutPut = {};
             SoundOutPut.SamplePerSecond = 48000;
             SoundOutPut.RunningSampleIndex = 0;
+            // SoundOutPut.tsine = 0.0f;
             SoundOutPut.hz = 256;
             SoundOutPut.WavePeriod = SoundOutPut.SamplePerSecond/SoundOutPut.hz;
             // SoundOutPut.SquareWaveCount = 0;
@@ -704,7 +712,7 @@ int CALLBACK WinMain
 
                 // NOTE: The purpose of the lock function is to create a safe area
                 //where the previous written data is proctected from overwriting
-                //play buffer one
+                //play cursor one
                 
                 // NOTE: This part create manually the sound bit by bit not loading them from any file source                
 
@@ -713,28 +721,25 @@ int CALLBACK WinMain
 
                 // NOTE: Still don't know why this happened
                 if(SUCCEEDED(GlobalSecondBuffer->GetCurrentPosition(&PlayCursor,            &WriteCursor))) {
+                    // TODO: Devle more about why I had to mod SecondBufferSize
+                    // to Byte based on index to create bytetolock
                     DWORD ByteToLock = (SoundOutPut.RunningSampleIndex* SoundOutPut.BytesPerSample)% SoundOutPut.SecondBufferSize;
-                
+                    
                     DWORD ByteToWrite;
-                    // TODO: Collapse these two loops
+
+// TODO: Collapse these two loops
                     // The bugs is we didn't catch up the play cursor yet
-                    if (ByteToLock == PlayCursor){
-                        // BUGS Lies here
-                        // SomeHow ByteToWrite always equal to SecondBufferSize
-                        // Cause the compare operator happens before PlayCursor
-                        // increment
-                        ByteToWrite = 0; // Glitching problem found
-                        // Uninitialized ByteToWrite var
-                    }
-                    else if(ByteToLock > PlayCursor){
-                        // Exclude out the lock area and then increment
-                        // by play cursor
+                    // TODO: Change this to using a lower latency offset from the
+                    // playcursor when we actually start having sound effect
+                    
+                    if(ByteToLock > PlayCursor){
+                        // 
                         ByteToWrite = (SoundOutPut.SecondBufferSize - ByteToLock); // Region 1
                         ByteToWrite += PlayCursor;                   // Region 2
                     } else {
-                        // In this case, The ByteToWrite is 0 and wait for the
-                        // next turn of the loop
-                        ByteToWrite = PlayCursor - ByteToLock;
+                        // when the requested size fit in buffer when there only region 1 is active
+                        // In this case,one situation is The ByteToWrite is 0 and wait for the next turn of the loop                        
+                        ByteToWrite = PlayCursor - ByteToLock; // Region 1
                     }
                     Win32FillSoundBuffer(&SoundOutPut, ByteToLock, ByteToWrite);
                 }                                                    
@@ -748,10 +753,7 @@ int CALLBACK WinMain
                 DeviceContext = GetDC(Window);                                    
                 GetWindowDimension(Window);                
                 Win32DisplayBufferWindow(DeviceContext, Dimens.Width, Dimens.Height, &BackBuffer);
-                ReleaseDC(Window, DeviceContext);
-                
-                // TODO: Somehow the function didn't receive the increase offset var
-                // to create the animation and somehow there is only one color that is blue
+                ReleaseDC(Window, DeviceContext);                
             }
             
         }else{
