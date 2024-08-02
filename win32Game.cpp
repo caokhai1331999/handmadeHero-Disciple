@@ -346,6 +346,11 @@ internal void Win32FillSoundBuffer(win32_Sound_OutPut* SoundOutPut, DWORD ByteTo
                             *SampleOut++ = SampleValue;
                             *SampleOut++ = SampleValue;
                             // --SquareWaveCounter;
+                            
+                            // NOTE: In order to avoid glitch instead of using
+                            // Running sampleindex (cause this var change over the time) we store where we are in
+                            // sinewave and then plus it to however far we want
+                            
                             SoundOutPut->tsine += 2.0f*Pi32* 1.0f/(real32)SoundOutPut->WavePeriod;
                             ++SoundOutPut->RunningSampleIndex;
                         }
@@ -362,8 +367,6 @@ internal void Win32FillSoundBuffer(win32_Sound_OutPut* SoundOutPut, DWORD ByteTo
 
                             *SampleOut++ = SampleValue;
                             *SampleOut++ = SampleValue;
-                            // NOTE: This is the way to keep tracking this var
-                            // in my synth
                             SoundOutPut->tsine += 2.0f*Pi32* 1.0f/(real32)SoundOutPut->WavePeriod;                            ++SoundOutPut->RunningSampleIndex;                            
                         }                                                GlobalSecondBuffer->Unlock(Region1, Region1Size, Region2, Region2Size);
                     }
