@@ -348,8 +348,8 @@ internal void Win32FillSoundBuffer(win32_Sound_OutPut* SoundOutPut, DWORD ByteTo
                             // --SquareWaveCounter;
                             
                             // NOTE: In order to avoid glitch instead of using
-                            // Running sampleindex (cause this var change over the time) we store where we are in
                             // sinewave and then plus it to however far we want
+                            // Running sampleindex (cause this var change over the time) we store where we are in
                             
                             SoundOutPut->tsine += 2.0f*Pi32* 1.0f/(real32)SoundOutPut->WavePeriod;
                             ++SoundOutPut->RunningSampleIndex;
