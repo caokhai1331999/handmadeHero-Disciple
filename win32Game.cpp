@@ -119,6 +119,7 @@ struct win32_Sound_OutPut{
     uint32 RunningSampleIndex;
     real32 tsine;
     int hz;
+    int LatencySampleCount;
     int WavePeriod;
     int SquareWaveCount;
     int ToneVolume;
@@ -634,6 +635,7 @@ int CALLBACK WinMain
             // SoundOutPut.tsine = 0.0f;
             SoundOutPut.hz = 256;
             SoundOutPut.WavePeriod = SoundOutPut.SamplePerSecond/SoundOutPut.hz;
+            SoundOutPut.LatencySampleCount = SoundOutPut.SamplePerSecond / 15;
             // SoundOutPut.SquareWaveCount = 0;
             SoundOutPut.ToneVolume = 3500;
             SoundOutPut.BytesPerSample = sizeof(int16)*2;
@@ -727,7 +729,8 @@ int CALLBACK WinMain
                     // TODO: Devle more about why I had to mod SecondBufferSize
                     // to Byte based on index to create bytetolock
                     DWORD ByteToLock = (SoundOutPut.RunningSampleIndex* SoundOutPut.BytesPerSample)% SoundOutPut.SecondBufferSize;
-                    
+                    // % for the secondBufferSize is the move to wrap around the buffer
+                    DWORD TargetCursor = (PlayCursor + (SoundOutPut.LatencySampleCount * SoundOutPut.BytesPerSample)) % SoundOutPut.SecondBufferSize;
                     DWORD ByteToWrite;
 
 // TODO: Collapse these two loops
@@ -735,14 +738,14 @@ int CALLBACK WinMain
                     // TODO: Change this to using a lower latency offset from the
                     // playcursor when we actually start having sound effect
                     
-                    if(ByteToLock > PlayCursor){
+                    if(ByteToLock > TargetCursor){
                         // 
                         ByteToWrite = (SoundOutPut.SecondBufferSize - ByteToLock); // Region 1
-                        ByteToWrite += PlayCursor;                   // Region 2
+                        ByteToWrite += TargetCursor;                   // Region 2
                     } else {
                         // when the requested size fit in buffer when there only region 1 is active
                         // In this case,one situation is The ByteToWrite is 0 and wait for the next turn of the loop                        
-                        ByteToWrite = PlayCursor - ByteToLock; // Region 1
+                        ByteToWrite = TargetCursor - ByteToLock; // Region 1
                     }
                     Win32FillSoundBuffer(&SoundOutPut, ByteToLock, ByteToWrite);
                 }                                                    
