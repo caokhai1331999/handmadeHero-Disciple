@@ -625,7 +625,10 @@ int CALLBACK WinMain
             0);
         
         if(Window) {
-            Running = true;            
+            Running = true;
+            LARGE_INTEGER PerfCountFrequencyResult;
+            queryperformancecounter(&PerfCountFrequencyResult);
+            int64 PerfCountFrequency = PerfCountFrequencyResult.QuadPart;
             //NOTE: we create a second buffer last for 2 second with
             // sample per second is 4800 and byte per sample is sizeof(int16)
 
@@ -646,7 +649,9 @@ int CALLBACK WinMain
             Win32FillSoundBuffer(&SoundOutPut, 0, SoundOutPut.SecondBufferSize);
             GlobalSecondBuffer->Play( 0, 0, DSBPLAY_LOOPING);
             OutputDebugStringA("Sound is playing");
-            
+
+            LARGE_INTEGER LastCounter;
+            QueryPerformanceCounter(&LastCounter);
             // bool32 SoundIsPlaying = false;                                        
             // NOTE: I don't know should I do this if else stuff or not!!!!
            
@@ -759,6 +764,12 @@ int CALLBACK WinMain
                 DeviceContext = GetDC(Window);                                    
                 GetWindowDimension(Window);                
                 Win32DisplayBufferWindow(DeviceContext, Dimens.Width, Dimens.Height, &BackBuffer);
+                
+                LARGE_INTEGER EndCounter;
+                QueryPerformanceCounter(&EndCounter);
+                int64 ElapsedCounter = LastCounter.QuadPart - EndCounter.QuadPart;
+                LastCounter = EndCounter;
+                
                 ReleaseDC(Window, DeviceContext);                
             }
             
