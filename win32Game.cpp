@@ -625,9 +625,11 @@ int CALLBACK WinMain
             0);
         
         if(Window) {
+
             Running = true;
             LARGE_INTEGER PerfCountFrequencyResult;
             queryperformancecounter(&PerfCountFrequencyResult);
+            // NOTE: Actually, this the number of frames increments over the time
             int64 PerfCountFrequency = PerfCountFrequencyResult.QuadPart;
             //NOTE: we create a second buffer last for 2 second with
             // sample per second is 4800 and byte per sample is sizeof(int16)
@@ -769,7 +771,11 @@ int CALLBACK WinMain
                 QueryPerformanceCounter(&EndCounter);
                 int64 ElapsedCounter = LastCounter.QuadPart - EndCounter.QuadPart;
                 LastCounter = EndCounter;
-                
+                int32 MsPerFrame = (int32)((1000 * ElapsedCounter) / perfcountfrequency);
+                char Buffer[256];
+                // NOTE: The '%' is to decide the format of the next thing to print
+                // for example: %d is the 32 bit integer
+                wsprintf(Buffer, "Miliseconds / frame: %d", MsPerFrame);
                 ReleaseDC(Window, DeviceContext);                
             }
             
