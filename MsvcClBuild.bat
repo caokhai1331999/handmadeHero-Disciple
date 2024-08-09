@@ -6,7 +6,7 @@ del *.obj *.pdb
 rem remember to add these to use address sanitizer /EHsc /fsanitize=address
 @echo off
 
-for %%f in (..\*.cpp ..\*.h) do (
+for %%f in (..\*.cpp) do (
     cl /FC /Zi -Fe:"win32Game" %%f -link user32.lib gdi32.lib
  )
 

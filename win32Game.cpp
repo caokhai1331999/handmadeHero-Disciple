@@ -26,6 +26,7 @@ using namespace std;
 typedef int16_t int16;
 typedef int8_t int8;
 typedef int32_t int32;
+typedef int64_t int64;
 
 typedef bool bool16;
 typedef bool bool32;
@@ -86,7 +87,7 @@ typedef ENUM_AUDIO_ENDPOINTS (Enum_Audio_Endpoints);
 // ==================================================================
 
 
-global_variable bool  Running;
+global_variable bool  GlobalRunning;
 global_variable HWND Window;
 global_variable RECT ClientRect;
 global_variable HDC DeviceContext;
@@ -350,7 +351,7 @@ internal void Win32FillSoundBuffer(win32_Sound_OutPut* SoundOutPut, DWORD ByteTo
                             
                             // NOTE: In order to avoid glitch instead of using
                             // sinewave and then plus it to however far we want
-                            // Running sampleindex (cause this var change over the time) we store where we are in
+                            // GlobalRunning sampleindex (cause this var change over the time) we store where we are in
                             
                             SoundOutPut->tsine += 2.0f*Pi32* 1.0f/(real32)SoundOutPut->WavePeriod;
                             ++SoundOutPut->RunningSampleIndex;
@@ -475,7 +476,7 @@ LRESULT CALLBACK MainWindowCallBack(
         
         case WM_CLOSE:
         {
-            Running = false;
+            GlobalRunning = false;
             OutputDebugStringA("WM_CLOSE\n");
         }break;
 
@@ -498,7 +499,7 @@ LRESULT CALLBACK MainWindowCallBack(
             uint32 vkCode = Wparam;
             bool AltkeyisDown = ((Lparam &(1 << 29)) != 0);
             if((vkCode == VK_F4) && AltkeyisDown) {
-                Running = false;
+                GlobalRunning = false;
             }                                        
             OutputDebugStringA("WM_SYSKEYDOWN\n");            
         }break;
@@ -552,7 +553,7 @@ LRESULT CALLBACK MainWindowCallBack(
 
         case WM_DESTROY:
         {
-            Running = false;
+            GlobalRunning = false;
             PostQuitMessage(0);
             OutputDebugStringA("WM_DESTROY\n");            
         }break;
@@ -598,6 +599,11 @@ int CALLBACK WinMain
  PSTR cmdline,
  int cmdshow)
 {
+    LARGE_INTEGER PerfCountFrequencyResult;
+    QueryPerformanceCounter(&PerfCountFrequencyResult);
+    // NOTE: Actually, this the counts per second
+    // TODO: Try to find out why the PerfCountFrequency is too large.
+    int64 PerfCountFrequency = PerfCountFrequencyResult.QuadPart;                
     win32LoadXInput();
     WNDCLASSA WindowClass = {};
     // NOTE: This is where receiving the message to change
@@ -623,14 +629,8 @@ int CALLBACK WinMain
             0,
             Instance ,
             0);
-        
         if(Window) {
-
-            Running = true;
-            LARGE_INTEGER PerfCountFrequencyResult;
-            queryperformancecounter(&PerfCountFrequencyResult);
-            // NOTE: Actually, this the number of frames increments over the time
-            int64 PerfCountFrequency = PerfCountFrequencyResult.QuadPart;
+            GlobalRunning = true; 
             //NOTE: we create a second buffer last for 2 second with
             // sample per second is 4800 and byte per sample is sizeof(int16)
 
@@ -657,11 +657,11 @@ int CALLBACK WinMain
             // bool32 SoundIsPlaying = false;                                        
             // NOTE: I don't know should I do this if else stuff or not!!!!
            
-            while(Running) {
+            while(GlobalRunning) {
                 MSG Message;
                 while(PeekMessageA(&Message, 0, 0, 0, PM_REMOVE)) {
                     if (Message.message == WM_QUIT) {
-                        Running = false;
+                        GlobalRunning = false;
                     }
                     DispatchMessage(&Message);
                     TranslateMessage(&Message);
@@ -769,14 +769,21 @@ int CALLBACK WinMain
                 
                 LARGE_INTEGER EndCounter;
                 QueryPerformanceCounter(&EndCounter);
-                int64 ElapsedCounter = LastCounter.QuadPart - EndCounter.QuadPart;
-                LastCounter = EndCounter;
-                int32 MsPerFrame = (int32)((1000 * ElapsedCounter) / perfcountfrequency);
+                
+                int64 ElapsedCounter = EndCounter.QuadPart - LastCounter.QuadPart;
+                // NOTE: MsPerFrame is Counts per frame flip it around we have
+                // 1 frame above counts
+                int32 MsPerFrame = (int32)((1000 * ElapsedCounter) / PerfCountFrequency);
+                int32 FPS = (int32)(PerfCountFrequency/ElapsedCounter);
                 char Buffer[256];
                 // NOTE: The '%' is to decide the format of the next thing to print
                 // for example: %d is the 32 bit integer
-                wsprintf(Buffer, "Miliseconds / frame: %d", MsPerFrame);
-                ReleaseDC(Window, DeviceContext);                
+                wsprintfA(Buffer, "Miliseconds/Frame: %d: ", MsPerFrame);
+                OutputDebugStringA(Buffer);
+                wsprintfA(Buffer, ",FPS: %d\n", FPS);
+                OutputDebugStringA(Buffer);
+                LastCounter = EndCounter;
+                // ReleaseDC(Window, DeviceContext);                
             }
             
         }else{
