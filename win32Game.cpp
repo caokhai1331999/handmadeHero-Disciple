@@ -5,6 +5,7 @@
    $Creator: Cao Khai(Casey Muratori's disciple) $
    $Notice: (C) Copyright 2024 by Cao Khai, Inc. All Rights Reserved. $
    ======================================================================== */
+#include <stdio.h>
 #include <iostream>
 #include <cmath>
 #include <Windows.h>
@@ -27,6 +28,7 @@ typedef int16_t int16;
 typedef int8_t int8;
 typedef int32_t int32;
 typedef int64_t int64;
+typedef uint64_t uint64;
 
 typedef bool bool16;
 typedef bool bool32;
@@ -603,7 +605,7 @@ int CALLBACK WinMain
     QueryPerformanceCounter(&PerfCountFrequencyResult);
     // NOTE: Actually, this the counts per second
     // TODO: Try to find out why the PerfCountFrequency is too large.
-    int64 PerfCountFrequency = PerfCountFrequencyResult.QuadPart;                
+    int64 PerfCountFrequency = (int64)(PerfCountFrequencyResult.QuadPart);                
     win32LoadXInput();
     WNDCLASSA WindowClass = {};
     // NOTE: This is where receiving the message to change
@@ -656,7 +658,9 @@ int CALLBACK WinMain
             QueryPerformanceCounter(&LastCounter);
             // bool32 SoundIsPlaying = false;                                        
             // NOTE: I don't know should I do this if else stuff or not!!!!
-           
+            uint64 LastCycleCounts;
+            LastCycleCounts = __rdtsc();
+            
             while(GlobalRunning) {
                 MSG Message;
                 while(PeekMessageA(&Message, 0, 0, 0, PM_REMOVE)) {
@@ -769,20 +773,25 @@ int CALLBACK WinMain
                 
                 LARGE_INTEGER EndCounter;
                 QueryPerformanceCounter(&EndCounter);
+
+                uint64 EndCycleCounts;
+                EndCycleCounts = __rdtsc();                
                 
-                int64 ElapsedCounter = EndCounter.QuadPart - LastCounter.QuadPart;
+                uint64 CyclesElapsed = EndCycleCounts - LastCycleCounts;
+                // NOTE: It based on the var type to decide what kind of the substraction to do
+                real32 ElapsedCounter = (real32)((real32)(EndCounter.QuadPart) - (real32)(LastCounter.QuadPart));
+                real32 McPerFrame = (real32)((real32)CyclesElapsed/(1000.f * 1000.f));
                 // NOTE: MsPerFrame is Counts per frame flip it around we have
                 // 1 frame above counts
-                int32 MsPerFrame = (int32)((1000 * ElapsedCounter) / PerfCountFrequency);
-                int32 FPS = (int32)(PerfCountFrequency/ElapsedCounter);
+                real32 MsPerFrame = (real32)((1000 * (real32)ElapsedCounter) / (real32)PerfCountFrequency);
+                real32 FPS = (real32)((real32)PerfCountFrequency/(real32)ElapsedCounter);
                 char Buffer[256];
                 // NOTE: The '%' is to decide the format of the next thing to print
                 // for example: %d is the 32 bit integer
-                wsprintfA(Buffer, "Miliseconds/Frame: %d: ", MsPerFrame);
-                OutputDebugStringA(Buffer);
-                wsprintfA(Buffer, ",FPS: %d\n", FPS);
+                sprintf(Buffer, "%f Miliseconds/Frame, %f FPS, %f Mc/f \n ", MsPerFrame, FPS, MsPerFrame);
                 OutputDebugStringA(Buffer);
                 LastCounter = EndCounter;
+                LastCycleCounts = EndCycleCounts;
                 // ReleaseDC(Window, DeviceContext);                
             }
             

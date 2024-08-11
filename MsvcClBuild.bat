@@ -1,7 +1,7 @@
 mkdir build
 pushd build
 
-del *.obj *.pdb
+REM del *.obj *.pdb
 
 rem remember to add these to use address sanitizer /EHsc /fsanitize=address
 @echo off
