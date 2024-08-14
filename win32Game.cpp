@@ -5,6 +5,26 @@
    $Creator: Cao Khai(Casey Muratori's disciple) $
    $Notice: (C) Copyright 2024 by Cao Khai, Inc. All Rights Reserved. $
    ======================================================================== */
+/*
+  TODO: THIS IS NOT A FINAL PLATFORM LAYER
+   - Saved the game location
+   - Get a handle to our own executable file
+   - Asset loading path
+   - Threading (launch a thread)
+   - Raw Input (Support multiple keyboards)
+   - Sleep/TimeBeginPeriod
+   - ClipCursor() (for multiple monitors)
+   - FullScreen Support
+   - WM_SetCursor ( Control Cursor Visibility)
+   - QueryCancelAutoplay
+   - WM_ActivateApp ( For when we are not active application)
+   - Blit speed improvement (using BitBlt)
+   - Hardware Acceleration (OpenGl or Direct3D or Both)
+   - Get Keyboard layout (For French layout, international WASD support)
+
+   Just a partial list if you want to get the game in a complete shipping state
+   
+ */
 #include <stdio.h>
 #include <iostream>
 #include <cmath>
@@ -14,6 +34,7 @@
 #include <combaseapi.h>
 #include <mmdeviceapi.h>
 #include <endpointvolume.h>
+
 #include <audioclient.h>
 
 using namespace std;
@@ -775,7 +796,15 @@ int CALLBACK WinMain
                 QueryPerformanceCounter(&EndCounter);
 
                 uint64 EndCycleCounts;
-                EndCycleCounts = __rdtsc();                
+                EndCycleCounts = __rdtsc();
+                //  __rdtsc() is an intrinsict which looked like a function call
+                // but it actually a hint to the compiler to a specific dissembly language intstruction
+                //
+                // S : Single 
+                // I : Instruction
+                // M : Multiple
+                // D : Data
+                
                 
                 uint64 CyclesElapsed = EndCycleCounts - LastCycleCounts;
                 // NOTE: It based on the var type to decide what kind of the substraction to do
@@ -792,6 +821,8 @@ int CALLBACK WinMain
                 OutputDebugStringA(Buffer);
                 LastCounter = EndCounter;
                 LastCycleCounts = EndCycleCounts;
+                // MULPD -> real32 ==> 128 bits / 32 bits -> 4 real32 packs per register 
+                // MULPS -> real64 ==> 128 bits / 64 bits -> 2 real32 packs per register  
                 // ReleaseDC(Window, DeviceContext);                
             }
             
