@@ -37,6 +37,7 @@
 
 #include <audioclient.h>
 
+
 using namespace std;
 
 #define internal static
@@ -60,6 +61,8 @@ typedef uint32_t uint32;
 
 typedef float real32;
 typedef double real64;
+
+#include "handmade.cpp"
 
 // NOTE: This is all about calling the function in the Xinput.h without the noticing from the compiler
 #define X_INPUT_GET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex,XINPUT_STATE *pState)
@@ -108,6 +111,10 @@ typedef CO_CREATE_INSTANCE (Co_Create_Instance);
 #define ENUM_AUDIO_ENDPOINTS(name) HRESULT name (EDataFlow dataFlow, DWORD        dwStateMask, LPVOID  FAR * ppv);
 typedef ENUM_AUDIO_ENDPOINTS (Enum_Audio_Endpoints);
 // ==================================================================
+
+void* PlatformLoadFile(char* FileName){
+    return 0;
+}
 
 
 global_variable bool  GlobalRunning;
@@ -791,6 +798,8 @@ int CALLBACK WinMain
                 DeviceContext = GetDC(Window);                                    
                 GetWindowDimension(Window);                
                 Win32DisplayBufferWindow(DeviceContext, Dimens.Width, Dimens.Height, &BackBuffer);
+                
+                MainLoop();
                 
                 LARGE_INTEGER EndCounter;
                 QueryPerformanceCounter(&EndCounter);
