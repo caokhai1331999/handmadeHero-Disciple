@@ -6,16 +6,16 @@ REM del *.obj *.pdb
 rem remember to add these to use address sanitizer /EHsc /fsanitize=address
 @echo off
 
-for %%f in (..\*.cpp) do (
-    cl /FC /Zi -Fe:"win32Game" %%f -link user32.lib gdi32.lib
- )
-
-if %ERRORLEVEL% EQU 0 (
-   @echo Announce: " compilation succeeded (^ w ^) "
-) else (
-   @echo                                  @   @          
-   @echo Announce: " compilation failed \_(-_-)_/ "
-)
+rem for %%f in (..\*.cpp) do (
+rem     cl /FC /Zi -Fe:"win32Game" %%f -link user32.lib gdi32.lib
+rem  )
+    cl /FC /Zi -Fe:"win32Game" ..\win32Game.cpp -link user32.lib gdi32.lib
+rem if %ERRORLEVEL% EQU 0 (
+rem    @echo Announce: " compilation succeeded (^ w ^) "
+rem ) else (
+rem    @echo                                  @   @          
+rem    @echo Announce: " compilation failed \_(-_-)_/ "
+rem )
 
 popd
 

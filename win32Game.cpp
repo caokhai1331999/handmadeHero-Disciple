@@ -112,35 +112,33 @@ typedef CO_CREATE_INSTANCE (Co_Create_Instance);
 typedef ENUM_AUDIO_ENDPOINTS (Enum_Audio_Endpoints);
 // ==================================================================
 
-void* PlatformLoadFile(char* FileName){
-    return 0;
-}
-
+struct Win32_Offscreen_Buffer{  
+    BITMAPINFO Bitmapinfo;
+    HBITMAP BitmapHandle;
+    void* BitmapMemory;
+    int BitmapWidth;
+    int BitmapHeight;
+    int Pitch;
+    const int BytesPerPixel = 4;
+};
 
 global_variable bool  GlobalRunning;
 global_variable HWND Window;
 global_variable RECT ClientRect;
 global_variable HDC DeviceContext;
 global_variable int  XOffset{0}, YOffset{0};
+global_variable Win32_Offscreen_Buffer BackBuffer = {};
 global_variable LPDIRECTSOUNDBUFFER GlobalSecondBuffer;
 
 const global_variable int Height{720};
 const global_variable int Width{1280};
 
-struct Win32_Offscreen_Buffer{  
-    BITMAPINFO Bitmapinfo;
-    void* BitmapMemory;
-    HBITMAP BitmapHandle;
-    int BitmapWidth;
-    int BitmapHeight;
-    const int BytesPerPixel{4};
-}BackBuffer;
+
 
 struct win32Dimension{
     int Height{720};
     int Width{1280};
 }Dimens;
-
 
 struct win32_Sound_OutPut{
     int SamplePerSecond;
@@ -411,34 +409,7 @@ void GetWindowDimension(HWND Window) {
     Dimens.Height= ClientRect.bottom - ClientRect.top;
 }
 
-void RenderSplendidGradient(Win32_Offscreen_Buffer* OBuffer,int XOffset, int YOffset) {
-    // RR GG BB
-    // Row is a pointer to every line of bitmapMemory
-    // While pitch is data length of everyline of bitmap
-    int Width = OBuffer->BitmapWidth;
-    int Height = OBuffer->BitmapHeight;    
-    int Pitch = OBuffer->BytesPerPixel*OBuffer->BitmapWidth;
-    uint8* Row = (uint8 *)OBuffer->BitmapMemory;
-    
-    for (int Y{0}; Y < Height; Y++) {
-        uint32* Pixel = (uint32 *)Row;
-        for(int X{0}; X < Width; X++) {
-            uint8 Blue = ( X + XOffset);
-            uint8 Green = ( Y + YOffset);
-            // NOTE: AA RR GG BB()
-            // Because I limit the size of Pixels so it can not add Green color to its storage
-            *Pixel++ = ( (Green<<8) | Blue);
-        }
-        // Instead of manually move row pointer every y axis (by add it to the pitch)
-        // we just need to reuse the Pixel pointer pass it to row where it was already moved
-        Row = (uint8 *)Pixel;
-    }        
-}
-
 internal void Win32ResizeDIBSection(Win32_Offscreen_Buffer* OBuffer, int Width, int Height) {
-    // Create a storage for memory first
-    // using virtualAlloc
-    // then store bitmap in it
     
     if(OBuffer->BitmapMemory) {
         VirtualFree(OBuffer->BitmapMemory, 0, MEM_RELEASE);
@@ -446,13 +417,12 @@ internal void Win32ResizeDIBSection(Win32_Offscreen_Buffer* OBuffer, int Width, 
     // NOTE: The BitmapWidth change every time we resize the window
     OBuffer->BitmapWidth = Width;
     OBuffer->BitmapHeight = Height;
+    OBuffer->Pitch = OBuffer->BytesPerPixel * OBuffer->BitmapWidth *    OBuffer->BitmapHeight;
     
     int BitMapMemorySize;
-    // 4 bits per pixel and there are total Width*Height pixels
 
     OBuffer->Bitmapinfo.bmiHeader.biSize = sizeof(OBuffer->Bitmapinfo.bmiHeader);
     OBuffer->Bitmapinfo.bmiHeader.biWidth = OBuffer->BitmapWidth;
-    // NOTE: Don't know why I have to leave negative height here
     OBuffer->Bitmapinfo.bmiHeader.biHeight = -OBuffer->BitmapHeight;
     OBuffer->Bitmapinfo.bmiHeader.biPlanes = 1;
     OBuffer->Bitmapinfo.bmiHeader.biBitCount = 32;
@@ -467,7 +437,7 @@ internal void Win32ResizeDIBSection(Win32_Offscreen_Buffer* OBuffer, int Width, 
 // in a total thing so that I can release it in aggregate
 
 internal void Win32DisplayBufferWindow(HDC DeviceContext, int WindowWidth, int WindowHeight, Win32_Offscreen_Buffer* OBuffer ) {
-    // the Source and the Destination rectangle means
+    
     StretchDIBits(
         DeviceContext,
         0,0,OBuffer->BitmapWidth, OBuffer->BitmapHeight, // Source rectangle
@@ -491,16 +461,13 @@ LRESULT CALLBACK MainWindowCallBack(
     switch(Message) {
         case WM_SIZE:
         {
-            // NOTE: Maybe the underlying cause of the unchanging bit is lay on the
-            // update the dc and the window resize section
             DeviceContext = GetDC(Window);
             GetWindowDimension(Window);
-            // RECT ClientRect;
             // NOTE: Whenever the window is resized, this function capture the size
             // of the new window and update a new proper DIB for that
             // DIB is a table where store BIT color infor
             Win32ResizeDIBSection(&BackBuffer, Dimens.Width, Dimens.Height);
-            Win32DisplayBufferWindow(DeviceContext, Dimens.Width, Dimens.Height,  &BackBuffer);
+            // Win32DisplayBufferWindow(DeviceContext, Dimens.Width, Dimens.Height,  &Buffer);
             OutputDebugStringA("WM_SIZE\n");
         }break;
         
@@ -636,17 +603,14 @@ int CALLBACK WinMain
     int64 PerfCountFrequency = (int64)(PerfCountFrequencyResult.QuadPart);                
     win32LoadXInput();
     WNDCLASSA WindowClass = {};
-    // NOTE: This is where receiving the message to change
-    // for any change in window
     WindowClass.lpfnWndProc = MainWindowCallBack;
     WindowClass.hInstance = Instance;
     WindowClass.lpszClassName = "First Game Window Class";
-  
+    Win32ResizeDIBSection(&BackBuffer, Dimens.Height, Dimens.Width);
     if(RegisterClassA(&WindowClass)) {
         
         Window = CreateWindowExA(
             // NOTE: The window didn't show up is because the first argument
-            // is not proper still have alot to do
             0,
             WindowClass.lpszClassName,
             "win32GameWithoutEngine",
@@ -662,8 +626,8 @@ int CALLBACK WinMain
         if(Window) {
             GlobalRunning = true; 
             //NOTE: we create a second buffer last for 2 second with
-            // sample per second is 4800 and byte per sample is sizeof(int16)
-
+            
+            
             // win32_Sound_OutPut SoundOutPut = {};
             SoundOutPut.SamplePerSecond = 48000;
             SoundOutPut.RunningSampleIndex = 0;
@@ -676,7 +640,6 @@ int CALLBACK WinMain
             SoundOutPut.BytesPerSample = sizeof(int16)*2;
             // Hert(hz) is cycles per second
             SoundOutPut.SecondBufferSize = 2*SoundOutPut.BytesPerSample*SoundOutPut.SamplePerSecond;
-            //NOTE: SomeHow the RunningSampleIndex failed to init as 0            
             win32InitDSound(Window, SoundOutPut.SamplePerSecond, SoundOutPut.SecondBufferSize);
             Win32FillSoundBuffer(&SoundOutPut, 0, SoundOutPut.SecondBufferSize);
             GlobalSecondBuffer->Play( 0, 0, DSBPLAY_LOOPING);
@@ -684,13 +647,13 @@ int CALLBACK WinMain
 
             LARGE_INTEGER LastCounter;
             QueryPerformanceCounter(&LastCounter);
-            // bool32 SoundIsPlaying = false;                                        
-            // NOTE: I don't know should I do this if else stuff or not!!!!
             uint64 LastCycleCounts;
             LastCycleCounts = __rdtsc();
             
             while(GlobalRunning) {
                 MSG Message;
+                // NOTE: This is where receiving the message to change
+                // for any change in window
                 while(PeekMessageA(&Message, 0, 0, 0, PM_REMOVE)) {
                     if (Message.message == WM_QUIT) {
                         GlobalRunning = false;
@@ -744,35 +707,37 @@ int CALLBACK WinMain
                 Vibration.wLeftMotorSpeed = 350;
                 Vibration.wRightMotorSpeed = 350;
                 XinputSetState(0, &Vibration);
-                RenderSplendidGradient(&BackBuffer, XOffset, YOffset);
+                
+                // RenderSplendidGradient(&BackBuffer, XOffset, YOffset);
 
                 // ===========================================================
-                // NOTE: The writting cursor create data and the play one will pick
+                // note: The writting cursor create data and the play one will pick
                 // everyone of them and send to sound card to make sound .
                 // One write one read just like a chase between a cat and a mouse.
                 // Once you hit play 'cursor position right now you have to stop
                 // the writting somewhere otherwise the newly date will overwrite
                 // whatever the play cursor want to read
 
-                // NOTE: The purpose of the lock function is to create a safe area
-                //where the previous written data is proctected from overwriting
-                //play cursor one
+                Game_Offscreen_Buffer Buffer = {};
+                Buffer.BitmapMemory = BackBuffer.BitmapMemory;
+                Buffer.BitmapWidth = BackBuffer.BitmapWidth;
+                Buffer.BitmapHeight = BackBuffer.BitmapHeight;
+                Buffer.Pitch = BackBuffer.Pitch;
+                GameUpdateAndRender(&Buffer, XOffset, YOffset);
                 
-                // NOTE: This part create manually the sound bit by bit not loading them from any file source                
-
+                
                 DWORD PlayCursor;
                 DWORD WriteCursor;
-
-                // NOTE: Still don't know why this happened
                 if(SUCCEEDED(GlobalSecondBuffer->GetCurrentPosition(&PlayCursor,            &WriteCursor))) {
                     // TODO: Devle more about why I had to mod SecondBufferSize
                     // to Byte based on index to create bytetolock
+                    
                     DWORD ByteToLock = (SoundOutPut.RunningSampleIndex* SoundOutPut.BytesPerSample)% SoundOutPut.SecondBufferSize;
                     // % for the secondBufferSize is the move to wrap around the buffer
                     DWORD TargetCursor = (PlayCursor + (SoundOutPut.LatencySampleCount * SoundOutPut.BytesPerSample)) % SoundOutPut.SecondBufferSize;
                     DWORD ByteToWrite;
 
-// TODO: Collapse these two loops
+                    // TODO: Collapse these two loops
                     // The bugs is we didn't catch up the play cursor yet
                     // TODO: Change this to using a lower latency offset from the
                     // playcursor when we actually start having sound effect
@@ -783,7 +748,7 @@ int CALLBACK WinMain
                         ByteToWrite += TargetCursor;                   // Region 2
                     } else {
                         // when the requested size fit in buffer when there only region 1 is active
-                        // In this case,one situation is The ByteToWrite is 0 and wait for the next turn of the loop                        
+                        // In this case,one situation is that The ByteToWrite is 0 and wait for the next turn of the loop                        
                         ByteToWrite = TargetCursor - ByteToLock; // Region 1
                     }
                     Win32FillSoundBuffer(&SoundOutPut, ByteToLock, ByteToWrite);
@@ -796,18 +761,17 @@ int CALLBACK WinMain
                 }
                 
                 DeviceContext = GetDC(Window);                                    
-                GetWindowDimension(Window);                
+                // RenderSplendidGradient(&BackBuffer, XOffset, YOffset);
                 Win32DisplayBufferWindow(DeviceContext, Dimens.Width, Dimens.Height, &BackBuffer);
-                
-                MainLoop();
                 
                 LARGE_INTEGER EndCounter;
                 QueryPerformanceCounter(&EndCounter);
 
                 uint64 EndCycleCounts;
                 EndCycleCounts = __rdtsc();
-                //  __rdtsc() is an intrinsict which looked like a function call
-                // but it actually a hint to the compiler to a specific dissembly language intstruction
+
+                //  __rdtsc() is an intrinsict (the one which looked like a function call
+                // but it actually a hint to the compiler to a specific dissembly language intstruction)
                 //
                 // S : Single 
                 // I : Instruction
@@ -819,15 +783,15 @@ int CALLBACK WinMain
                 // NOTE: It based on the var type to decide what kind of the substraction to do
                 real32 ElapsedCounter = (real32)((real32)(EndCounter.QuadPart) - (real32)(LastCounter.QuadPart));
                 real32 McPerFrame = (real32)((real32)CyclesElapsed/(1000.f * 1000.f));
-                // NOTE: MsPerFrame is Counts per frame flip it around we have
-                // 1 frame above counts
                 real32 MsPerFrame = (real32)((1000 * (real32)ElapsedCounter) / (real32)PerfCountFrequency);
                 real32 FPS = (real32)((real32)PerfCountFrequency/(real32)ElapsedCounter);
+#if 0                
                 char Buffer[256];
                 // NOTE: The '%' is to decide the format of the next thing to print
                 // for example: %d is the 32 bit integer
                 sprintf(Buffer, "%f Miliseconds/Frame, %f FPS, %f Mc/f \n ", MsPerFrame, FPS, MsPerFrame);
                 OutputDebugStringA(Buffer);
+#endif                
                 LastCounter = EndCounter;
                 LastCycleCounts = EndCycleCounts;
                 // MULPD -> real32 ==> 128 bits / 32 bits -> 4 real32 packs per register 
