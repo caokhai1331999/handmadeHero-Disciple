@@ -26,8 +26,8 @@
    
  */
 #include <stdio.h>
-#include <iostream>
 #include <cmath>
+#include <iostream>
 #include <Windows.h>
 #include <xinput.h>
 #include <DSound.h>
