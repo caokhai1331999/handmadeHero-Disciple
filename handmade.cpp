@@ -31,6 +31,27 @@ void RenderSplendidGradient(Game_Offscreen_Buffer* OBuffer, int XOffset, int YOf
     }        
 }
 
+internal void GameOutPutSound(LPDIRECTSOUNDBUFFER SecondSoundBuffer){
+    for (int SampleIndex{0};
+         SampleIndex < Region2SampleCount;
+         SampleIndex++){
+
+        local_persist real32 tsine = 0;
+        local_persist real32 ToneVolume = 3000;
+        // int16 SampleValue = ((RunningSampleIndex++/          (SquareWavePeriod/2))% 2) ? ToneVolume : -ToneVolume;
+        real32 SineValue = sinf(tsine);            
+        int16 SampleValue = (int16)(SineValue * ToneVolume);
+
+        *SampleOut++ = SampleValue;
+        *SampleOut++ = SampleValue;
+        tsine += 2.0f*Pi32* 1.0f/(real32)SoundOutPut->WavePeriod;                            ++SoundOutPut->RunningSampleIndex;                            
+    }                                                GlobalSecondBuffer->Unlock(Region1, Region1Size, Region2, Region2Size);
+}
+}
+    
+}
+
 void GameUpdateAndRender(Game_Offscreen_Buffer* OBuffer, int BlueOffset, int GreenOffset){
+    GameOutPutSound(LPDIRECTSOUNDBUFFER SecondSoundBuffer);
     RenderSplendidGradient(OBuffer, BlueOffset, GreenOffset);
 }
