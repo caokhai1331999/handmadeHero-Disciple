@@ -31,18 +31,21 @@ void RenderSplendidGradient(Game_Offscreen_Buffer* OBuffer, int XOffset, int YOf
     }        
 }
 
-internal void GameOutPutSound(Game_Sound_OutPut* SecondSoundBuffer) {
+internal void GameOutPutSound(Game_Sound_OutPut* SecondSoundBuffer, int Hz) {
     local_persist real32 tsine = 0;
     local_persist int ToneVolume = 3000;
-    local_persist int ToneHz = 256;
-    local_persist int WavePeriod = SecondSoundBuffer->SamplePerSecond/ToneHz ;
+    // local_persist int ToneHz = 256;
+    char Output[256];
+    sprintf(Output, "Current Hert is: %d\n", Hz);
+    OutputDebugStringA(Output);                      
+    local_persist int WavePeriod = SecondSoundBuffer->SamplePerSecond/Hz ;
     // int16 SampleValue = ((RunningSampleIndex++/          (SquareWavePeriod/2))% 2) ? ToneVolume : -ToneVolume;
+    int16* SampleOut = SecondSoundBuffer->Samples;
 
     for (int SampleIndex{0};
          SampleIndex < SecondSoundBuffer->SampleCounts;
          SampleIndex++){
 
-        int16* SampleOut = SecondSoundBuffer->Samples;
         real32 SineValue = sinf(tsine);            
         int16 SampleValue = (int16)(SineValue * ToneVolume);
 
@@ -52,7 +55,7 @@ internal void GameOutPutSound(Game_Sound_OutPut* SecondSoundBuffer) {
     }                                               
 }
 
-void GameUpdateAndRender(Game_Offscreen_Buffer* OBuffer, int BlueOffset, int GreenOffset, Game_Sound_OutPut* SecondSoundBuffer){
-    GameOutPutSound(SecondSoundBuffer);
+void GameUpdateAndRender(Game_Offscreen_Buffer* OBuffer, int BlueOffset, int GreenOffset, Game_Sound_OutPut* SecondSoundBuffer, int Hz){
+    GameOutPutSound(SecondSoundBuffer, Hz);
     RenderSplendidGradient(OBuffer, BlueOffset, GreenOffset);
 }

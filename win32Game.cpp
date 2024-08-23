@@ -567,8 +567,11 @@ LRESULT CALLBACK MainWindowCallBack(
                     } else {
                         SoundOutPut.hz = 256;
                     }
+                    // char Output[256];
+                    // sprintf(Output, "TAB button hitted, Current Hert is: %d\n", SoundOutPut.hz);
                     SoundOutPut.WavePeriod = SoundOutPut.SamplePerSecond/SoundOutPut.hz;
-                    OutputDebugStringA("TAB button hitted \n");                  
+                    
+                    OutputDebugStringA("TAB button hitted");                  
                 }
             }                
             }break;
@@ -653,7 +656,7 @@ int CALLBACK WinMain
             //NOTE: we create a second buffer last for 2 second with
             
             
-            win32_Sound_OutPut SoundOutPut = {};
+            // win32_Sound_OutPut SoundOutPut = {};
             SoundOutPut.SamplePerSecond = 48000;
             SoundOutPut.RunningSampleIndex = 0;
             // SoundOutPut.tsine = 0.0f;
@@ -742,39 +745,20 @@ int CALLBACK WinMain
                 // the writting somewhere otherwise the newly date will overwrite
                 // whatever the play cursor want to read
 
+                
                 // NOTE: We need to constantly ask the where we are in sound chase
                 // and fill properly in the regions
-                bool32 SoundIsValid = false ;
-                
                 DWORD PlayCursor;
                 DWORD WriteCursor;
                 DWORD ByteToLock;
                 DWORD ByteToWrite;
                 DWORD TargetCursor;
+                bool32 SoundIsValid = false ;
                 if(SUCCEEDED(GlobalSecondBuffer->GetCurrentPosition(&PlayCursor,            &WriteCursor))) {
-                    SoundIsValid  = true; 
-                }                
-
-                int16 Samples [48000/30 * 2];
-                Game_Sound_OutPut SoundBuffer = {};
-                SoundBuffer.SamplePerSecond = SoundOutPut.SamplePerSecond;
-                SoundBuffer.SampleCounts = SoundOutPut.SamplePerSecond/30;
-                SoundBuffer.Samples = Samples;
-                
-                Game_Offscreen_Buffer Buffer = {};
-                Buffer.BitmapMemory = BackBuffer.BitmapMemory;
-                Buffer.BitmapWidth = BackBuffer.BitmapWidth;
-                Buffer.BitmapHeight = BackBuffer.BitmapHeight;
-                Buffer.Pitch = BackBuffer.Pitch;
-                GameUpdateAndRender(&Buffer, XOffset, YOffset, &SoundBuffer);
-                GlobalSecondBuffer->Play( 0, 0, DSBPLAY_LOOPING);
-                if (SoundIsValid){
-                    // TODO: Devle more about why I had to mod SecondBufferSize
-                    // to Byte based on index to create bytetolock
                     
                     ByteToLock = (SoundOutPut.RunningSampleIndex* SoundOutPut.BytesPerSample)% SoundOutPut.SecondBufferSize;
                     // % for the secondBufferSize is the move to wrap around the buffer
-                    TargetCursor = (PlayCursor + (SoundOutPut.LatencySampleCount * SoundOutPut.BytesPerSample)) % SoundOutPut.SecondBufferSize;
+                    TargetCursor = ((PlayCursor + (SoundOutPut.LatencySampleCount * SoundOutPut.BytesPerSample)) % SoundOutPut.SecondBufferSize);
 
                     // TODO: Collapse these two loops
                     // The bugs is we didn't catch up the play cursor yet
@@ -789,7 +773,28 @@ int CALLBACK WinMain
                         // when the requested size fit in buffer when there only region 1 is active
                         // In this case,one situation is that The ByteToWrite is 0 and wait for the next turn of the loop                        
                         ByteToWrite = TargetCursor - ByteToLock; // Region 1
-                    }
+                    }                    
+                    SoundIsValid  = true; 
+                }                
+
+                int16 Samples [48000 * 2];
+                Game_Sound_OutPut SoundBuffer = {};
+                SoundBuffer.SamplePerSecond = SoundOutPut.SamplePerSecond;
+                SoundBuffer.SampleCounts = ByteToWrite/SoundOutPut.BytesPerSample;
+                SoundBuffer.Samples = Samples;
+                
+                Game_Offscreen_Buffer Buffer = {};
+                Buffer.BitmapMemory = BackBuffer.BitmapMemory;
+                Buffer.BitmapWidth = BackBuffer.BitmapWidth;
+                Buffer.BitmapHeight = BackBuffer.BitmapHeight;
+                Buffer.Pitch = BackBuffer.Pitch;
+                GlobalSecondBuffer->Play( 0, 0, DSBPLAY_LOOPING);
+                GameUpdateAndRender(&Buffer, XOffset, YOffset, &SoundBuffer, SoundOutPut.hz);
+
+                if (SoundIsValid){
+                    // TODO: Devle more about why I had to mod SecondBufferSize
+                    // to Byte based on index to create bytetolock
+
                     Win32FillSoundBuffer(&SoundOutPut, ByteToLock, ByteToWrite, &SoundBuffer);
                 }                                                    
                                 
