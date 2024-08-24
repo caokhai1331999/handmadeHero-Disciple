@@ -32,15 +32,19 @@ void RenderSplendidGradient(Game_Offscreen_Buffer* OBuffer, int XOffset, int YOf
 }
 
 internal void GameOutPutSound(Game_Sound_OutPut* SecondSoundBuffer, int Hz) {
+    char Output[256];
     local_persist real32 tsine = 0;
     local_persist int ToneVolume = 3000;
-    // local_persist int ToneHz = 256;
-    char Output[256];
-    sprintf(Output, "Current Hert is: %d\n", Hz);
-    OutputDebugStringA(Output);                      
-    local_persist int WavePeriod = SecondSoundBuffer->SamplePerSecond/Hz ;
+    
+    // NOTE: The issued happened because I created and assigned value directly to  WavePeriod everytime I call the function without inittializing it properly
+    // Initialize it and then assign the value solved the problem
+    
+    local_persist int WavePeriod = 0;
+    WavePeriod = SecondSoundBuffer->SamplePerSecond/Hz;
+    
     // int16 SampleValue = ((RunningSampleIndex++/          (SquareWavePeriod/2))% 2) ? ToneVolume : -ToneVolume;
-    int16* SampleOut = SecondSoundBuffer->Samples;
+    int16* SampleOut = nullptr;
+    SampleOut = SecondSoundBuffer->Samples;
 
     for (int SampleIndex{0};
          SampleIndex < SecondSoundBuffer->SampleCounts;
@@ -53,6 +57,8 @@ internal void GameOutPutSound(Game_Sound_OutPut* SecondSoundBuffer, int Hz) {
         *SampleOut++ = SampleValue;
         tsine += 2.0f*Pi32* 1.0f/(real32)WavePeriod;                            
     }                                               
+    sprintf(Output, "Current Hert is: %d, Current WavePeriod is: %d \n", Hz, WavePeriod);
+    OutputDebugStringA(Output);                      
 }
 
 void GameUpdateAndRender(Game_Offscreen_Buffer* OBuffer, int BlueOffset, int GreenOffset, Game_Sound_OutPut* SecondSoundBuffer, int Hz){

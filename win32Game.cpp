@@ -562,10 +562,12 @@ LRESULT CALLBACK MainWindowCallBack(
                 }
                 
                 else if(vkCode == VK_TAB) {
-                    if(SoundOutPut.hz == 256){
+                    if(SoundOutPut.hz == 128){
+                        SoundOutPut.hz = 256;
+                    } else if (SoundOutPut.hz == 256) {
                         SoundOutPut.hz = 512;
                     } else {
-                        SoundOutPut.hz = 256;
+                        SoundOutPut.hz = 128;                        
                     }
                     // char Output[256];
                     // sprintf(Output, "TAB button hitted, Current Hert is: %d\n", SoundOutPut.hz);
@@ -623,7 +625,7 @@ int CALLBACK WinMain
  HINSTANCE hInstPrev,
  PSTR cmdline,
  int cmdshow)
-{
+{    
     LARGE_INTEGER PerfCountFrequencyResult;
     QueryPerformanceCounter(&PerfCountFrequencyResult);
     // NOTE: Actually, this the counts per second
@@ -660,7 +662,7 @@ int CALLBACK WinMain
             SoundOutPut.SamplePerSecond = 48000;
             SoundOutPut.RunningSampleIndex = 0;
             // SoundOutPut.tsine = 0.0f;
-            SoundOutPut.hz = 256;
+            SoundOutPut.hz = 128;
             SoundOutPut.WavePeriod = SoundOutPut.SamplePerSecond/SoundOutPut.hz;
             SoundOutPut.LatencySampleCount = SoundOutPut.SamplePerSecond / 15;
             // SoundOutPut.SquareWaveCount = 0;
@@ -668,6 +670,13 @@ int CALLBACK WinMain
             SoundOutPut.BytesPerSample = sizeof(int16)*2;
             // Hert(hz) is cycles per second
             SoundOutPut.SecondBufferSize = 2*SoundOutPut.BytesPerSample*SoundOutPut.SamplePerSecond;
+
+            int16* Samples = nullptr;
+            if(Samples != nullptr) {
+                VirtualFree(Samples, 0, MEM_RELEASE);
+            }          
+            Samples = (int16* )VirtualAlloc(0 , SoundOutPut.SecondBufferSize ,MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+            
             win32InitDSound(Window, SoundOutPut.SamplePerSecond, SoundOutPut.SecondBufferSize);
             Win32ClearSoundBuffer(&SoundOutPut);
             OutputDebugStringA("Sound is playing");
@@ -777,10 +786,12 @@ int CALLBACK WinMain
                     SoundIsValid  = true; 
                 }                
 
-                int16 Samples [48000 * 2];
+                // NOTE: this function throw this memory on the stack and I know
+                // it will go away when it function is done
                 Game_Sound_OutPut SoundBuffer = {};
                 SoundBuffer.SamplePerSecond = SoundOutPut.SamplePerSecond;
                 SoundBuffer.SampleCounts = ByteToWrite/SoundOutPut.BytesPerSample;
+                SoundBuffer.Samples = nullptr;
                 SoundBuffer.Samples = Samples;
                 
                 Game_Offscreen_Buffer Buffer = {};
@@ -789,6 +800,9 @@ int CALLBACK WinMain
                 Buffer.BitmapHeight = BackBuffer.BitmapHeight;
                 Buffer.Pitch = BackBuffer.Pitch;
                 GlobalSecondBuffer->Play( 0, 0, DSBPLAY_LOOPING);
+                
+                // TODO: This function just being called once
+                
                 GameUpdateAndRender(&Buffer, XOffset, YOffset, &SoundBuffer, SoundOutPut.hz);
 
                 if (SoundIsValid){
