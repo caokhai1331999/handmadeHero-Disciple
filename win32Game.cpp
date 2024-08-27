@@ -38,6 +38,7 @@
 #include <audioclient.h>
 
 
+
 using namespace std;
 
 #define internal static
@@ -61,8 +62,6 @@ typedef uint32_t uint32;
 
 typedef float real32;
 typedef double real64;
-
-#include "handmade.cpp"
 
 // NOTE: This is all about calling the function in the Xinput.h without the noticing from the compiler
 #define X_INPUT_GET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex,XINPUT_STATE *pState)
@@ -112,48 +111,19 @@ typedef CO_CREATE_INSTANCE (Co_Create_Instance);
 typedef ENUM_AUDIO_ENDPOINTS (Enum_Audio_Endpoints);
 // ==================================================================
 
-struct Win32_Offscreen_Buffer{  
-    BITMAPINFO Bitmapinfo;
-    HBITMAP BitmapHandle;
-    void* BitmapMemory;
-    int BitmapWidth;
-    int BitmapHeight;
-    int Pitch;
-    const int BytesPerPixel = 4;
-};
+#include "handmade.h"
+#include "win32Game.h"
 
 global_variable bool  GlobalRunning;
 global_variable HWND Window;
 global_variable RECT ClientRect;
 global_variable HDC DeviceContext;
 global_variable int  XOffset{0}, YOffset{0};
-global_variable Win32_Offscreen_Buffer BackBuffer = {};
+global_variable Win32_OffScreen_Buffer BackBuffer = {};
 global_variable LPDIRECTSOUNDBUFFER GlobalSecondBuffer;
 
 const global_variable int Height{720};
 const global_variable int Width{1280};
-
-
-
-struct win32Dimension{
-    int Height{720};
-    int Width{1280};
-}Dimens;
-
-struct win32_Sound_OutPut{
-    int SamplePerSecond;
-    int BytesPerSample;
-    // Hert(hz) is cycles per second
-    int32 SecondBufferSize;
-    uint32 RunningSampleIndex;
-    real32 tsine;
-    int hz;
-    int LatencySampleCount;
-    int WavePeriod;
-    int SquareWaveCount;
-    int ToneVolume;
-    // Sample per cycle is SquareWave Period    
-}SoundOutPut;
 
 internal void
 win32LoadXInput(void) {
@@ -434,7 +404,7 @@ void GetWindowDimension(HWND Window) {
     Dimens.Height= ClientRect.bottom - ClientRect.top;
 }
 
-internal void Win32ResizeDIBSection(Win32_Offscreen_Buffer* OBuffer, int Width, int Height) {
+internal void Win32ResizeDIBSection(Win32_OffScreen_Buffer* OBuffer, int Width, int Height) {
     
     if(OBuffer->BitmapMemory) {
         VirtualFree(OBuffer->BitmapMemory, 0, MEM_RELEASE);
@@ -461,7 +431,7 @@ internal void Win32ResizeDIBSection(Win32_Offscreen_Buffer* OBuffer, int Width, 
 // NOTE: Keep in mind that try to all what you need to release back to memory
 // in a total thing so that I can release it in aggregate
 
-internal void Win32DisplayBufferWindow(HDC DeviceContext, int WindowWidth, int WindowHeight, Win32_Offscreen_Buffer* OBuffer ) {
+internal void Win32DisplayBufferWindow(HDC DeviceContext, int WindowWidth, int WindowHeight, Win32_OffScreen_Buffer* OBuffer ) {
     
     StretchDIBits(
         DeviceContext,
@@ -671,8 +641,8 @@ int CALLBACK WinMain
             SoundOutPut.SamplePerSecond = 48000;
             SoundOutPut.RunningSampleIndex = 0;
             // SoundOutPut.tsine = 0.0f;
-            SoundOutPut.hz = 128;
-            SoundOutPut.WavePeriod = SoundOutPut.SamplePerSecond/SoundOutPut.hz;
+            // SoundOutPut.hz = 128;
+            // SoundOutPut.WavePeriod = SoundOutPut.SamplePerSecond/SoundOutPut.hz;
             SoundOutPut.LatencySampleCount = SoundOutPut.SamplePerSecond / 15;
             // SoundOutPut.SquareWaveCount = 0;
             SoundOutPut.ToneVolume = 3500;
@@ -730,12 +700,6 @@ int CALLBACK WinMain
                         int16 StickX = Pad->sThumbLX;
                         int16 StickY = Pad->sThumbLY;
 
-                        XOffset = StickX >> 12;
-                        YOffset = StickY >> 12;
-                        // if (Up) {
-                        //     YOffset -= 4;
-                        //     OutputDebugStringA("Control Pad Up button triggered\n");
-                        // }
                     } else {
                         // NOTE: The controller is not available
                     };
@@ -750,7 +714,7 @@ int CALLBACK WinMain
                 // RenderSplendidGradient(&BackBuffer, XOffset, YOffset);
 
                 // ===========================================================
-                // note: The writting cursor create data and the play one will pick
+                // NOTE: The writting cursor create data and the play one will pick
                 // everyone of them and send to sound card to make sound .
                 // One write one read just like a chase between a cat and a mouse.
                 // Once you hit play 'cursor position right now you have to stop
@@ -797,16 +761,19 @@ int CALLBACK WinMain
                 SoundBuffer.Samples = nullptr;
                 SoundBuffer.Samples = Samples;
                 
-                Game_Offscreen_Buffer Buffer = {};
-                Buffer.BitmapMemory = BackBuffer.BitmapMemory;
-                Buffer.BitmapWidth = BackBuffer.BitmapWidth;
-                Buffer.BitmapHeight = BackBuffer.BitmapHeight;
-                Buffer.Pitch = BackBuffer.Pitch;
+                Game_OffScreen_Buffer ScreenBuffer = {};
+                ScreenBuffer.BitmapMemory = BackBuffer.BitmapMemory;
+                ScreenBuffer.BitmapWidth = BackBuffer.BitmapWidth;
+                ScreenBuffer.BitmapHeight = BackBuffer.BitmapHeight;
+                ScreenBuffer.Pitch = BackBuffer.Pitch;
                 GlobalSecondBuffer->Play( 0, 0, DSBPLAY_LOOPING);
+                // NOTE: Don't know why compiler couldn't find this function
+                // implementation after a little remove of few arguments
+                
+                GameUpdateAndRender(&ScreenBuffer, &SoundBuffer);
                 
                 // TODO: This function just being called once
                 
-                GameUpdateAndRender(&Buffer, XOffset, YOffset, &SoundBuffer, SoundOutPut.hz);
 
                 if (SoundIsValid){
                     // TODO: Devle more about why I had to mod SecondBufferSize

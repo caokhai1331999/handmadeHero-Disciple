@@ -7,7 +7,7 @@
    ======================================================================== */
 #include "handmade.h"
 
-void RenderSplendidGradient(Game_Offscreen_Buffer* OBuffer, int XOffset, int YOffset) {
+internal void RenderSplendidGradient(Game_Offscreen_Buffer* OBuffer, int XOffset, int YOffset) {
     // RR GG BB
     // Row is a pointer to every line of bitmapMemory
     // While pitch is data length of everyline of bitmap
@@ -30,6 +30,7 @@ void RenderSplendidGradient(Game_Offscreen_Buffer* OBuffer, int XOffset, int YOf
         Row = (uint8 *)Pixel;        
     }        
 }
+
 
 internal void GameOutPutSound(Game_Sound_OutPut* SecondSoundBuffer, int Hz) {
     char Output[256];
@@ -61,7 +62,12 @@ internal void GameOutPutSound(Game_Sound_OutPut* SecondSoundBuffer, int Hz) {
     OutputDebugStringA(Output);                      
 }
 
-void GameUpdateAndRender(Game_Offscreen_Buffer* OBuffer, int BlueOffset, int GreenOffset, Game_Sound_OutPut* SecondSoundBuffer, int Hz){
-    GameOutPutSound(SecondSoundBuffer, Hz);
+void GameUpdateAndRender(Game_Offscreen_Buffer* OBuffer, Game_Sound_OutPut* SoundBuffer){
+
+    local_persist int BlueOffset = 0;
+    local_persist int GreenOffset = 0;
+    local_persist int Hz = 256;
+    
+    GameOutPutSound(SoundBuffer, Hz);
     RenderSplendidGradient(OBuffer, BlueOffset, GreenOffset);
 }
