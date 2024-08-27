@@ -637,6 +637,7 @@ int CALLBACK WinMain
     WindowClass.hInstance = Instance;
     WindowClass.lpszClassName = "First Game Window Class";
     Win32ResizeDIBSection(&BackBuffer, Dimens.Height, Dimens.Width);
+
     if(RegisterClassA(&WindowClass)) {
         
         Window = CreateWindowExA(
@@ -656,7 +657,15 @@ int CALLBACK WinMain
         if(Window) {
             GlobalRunning = true; 
             //NOTE: we create a second buffer last for 2 second with
-            
+
+            int16* Samples = nullptr;
+            // NOTE: Don't call _alloc in the app loop it cause bug (it doesn't clean up entirely but just barely in the function)
+
+            if(Samples != nullptr) {
+                VirtualFree(Samples, 0, MEM_RELEASE);
+            }          
+
+            Samples = (int16* )VirtualAlloc(0 , SoundOutPut.SecondBufferSize ,MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
             
             // win32_Sound_OutPut SoundOutPut = {};
             SoundOutPut.SamplePerSecond = 48000;
@@ -670,12 +679,6 @@ int CALLBACK WinMain
             SoundOutPut.BytesPerSample = sizeof(int16)*2;
             // Hert(hz) is cycles per second
             SoundOutPut.SecondBufferSize = 2*SoundOutPut.BytesPerSample*SoundOutPut.SamplePerSecond;
-
-            int16* Samples = nullptr;
-            if(Samples != nullptr) {
-                VirtualFree(Samples, 0, MEM_RELEASE);
-            }          
-            Samples = (int16* )VirtualAlloc(0 , SoundOutPut.SecondBufferSize ,MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
             
             win32InitDSound(Window, SoundOutPut.SamplePerSecond, SoundOutPut.SecondBufferSize);
             Win32ClearSoundBuffer(&SoundOutPut);
