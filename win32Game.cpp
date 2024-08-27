@@ -38,7 +38,6 @@
 #include <audioclient.h>
 
 
-
 using namespace std;
 
 #define internal static
@@ -62,6 +61,8 @@ typedef uint32_t uint32;
 
 typedef float real32;
 typedef double real64;
+
+#include "win32Game.h"
 
 // NOTE: This is all about calling the function in the Xinput.h without the noticing from the compiler
 #define X_INPUT_GET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex,XINPUT_STATE *pState)
@@ -111,14 +112,13 @@ typedef CO_CREATE_INSTANCE (Co_Create_Instance);
 typedef ENUM_AUDIO_ENDPOINTS (Enum_Audio_Endpoints);
 // ==================================================================
 
-#include "handmade.h"
-#include "win32Game.h"
+#include "handmade.cpp"
 
 global_variable bool  GlobalRunning;
 global_variable HWND Window;
 global_variable RECT ClientRect;
 global_variable HDC DeviceContext;
-global_variable int  XOffset{0}, YOffset{0};
+// global_variable int  XOffset{0}, YOffset{0};
 global_variable Win32_OffScreen_Buffer BackBuffer = {};
 global_variable LPDIRECTSOUNDBUFFER GlobalSecondBuffer;
 
@@ -511,15 +511,15 @@ LRESULT CALLBACK MainWindowCallBack(
             if (WasDown != IsDown) {
 
                 if(vkCode == VK_UP) {
-                    YOffset -= 10;
+                    // YOffset -= 10;
                 }
 
                 else if(vkCode == VK_DOWN) {
-                    YOffset += 10;
+                    // YOffset += 10;
                 }
 
                 else if(vkCode == VK_LEFT) {
-                    XOffset -= 10;
+                    // XOffset -= 10;
                     OutputDebugStringA("Left Button :");
                     if(WasDown) {                    
                         OutputDebugStringA(" Was Down");
@@ -528,7 +528,7 @@ LRESULT CALLBACK MainWindowCallBack(
                 }
 
                 else if(vkCode == VK_RIGHT) {
-                    XOffset += 10;                    
+                    // XOffset += 10;                    
                 }
                 
                 else if(vkCode == VK_TAB) {
@@ -628,14 +628,10 @@ int CALLBACK WinMain
             GlobalRunning = true; 
             //NOTE: we create a second buffer last for 2 second with
 
-            int16* Samples = nullptr;
+            // int16* SSamples = nullptr;
             // NOTE: Don't call _alloc in the app loop it cause bug (it doesn't clean up entirely but just barely in the function)
 
-            if(Samples != nullptr) {
-                VirtualFree(Samples, 0, MEM_RELEASE);
-            }          
-
-            Samples = (int16* )VirtualAlloc(0 , SoundOutPut.SecondBufferSize ,MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+            int16* SSamples = (int16* )VirtualAlloc(0 , SoundOutPut.SecondBufferSize ,MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
             
             // win32_Sound_OutPut SoundOutPut = {};
             SoundOutPut.SamplePerSecond = 48000;
@@ -759,7 +755,7 @@ int CALLBACK WinMain
                 SoundBuffer.SamplePerSecond = SoundOutPut.SamplePerSecond;
                 SoundBuffer.SampleCounts = ByteToWrite/SoundOutPut.BytesPerSample;
                 SoundBuffer.Samples = nullptr;
-                SoundBuffer.Samples = Samples;
+                SoundBuffer.Samples = SSamples;
                 
                 Game_OffScreen_Buffer ScreenBuffer = {};
                 ScreenBuffer.BitmapMemory = BackBuffer.BitmapMemory;
@@ -785,7 +781,7 @@ int CALLBACK WinMain
                 // =============================================================
                 if(Message.message != WM_KEYDOWN && Message.message != WM_KEYUP)
                 {
-                    XOffset++;
+                    // XOffset++;
                 }
                 
                 DeviceContext = GetDC(Window);                                    
