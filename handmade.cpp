@@ -7,6 +7,10 @@
    ======================================================================== */
 #include "handmade.h"
 
+// NOTE: Remember premature api optimization is a destructive way to code an api
+// because is will cause difficulties for shipping code or changing platform
+// and u will waste alot of time in a unnecessary big chunk of code
+
 internal void RenderSplendidGradient(Game_OffScreen_Buffer* OBuffer, int XOffset, int YOffset) {
     // RR GG BB
     // Row is a pointer to every line of bitmapMemory
@@ -44,7 +48,8 @@ internal void GameOutPutSound(Game_Sound_OutPut* SecondSoundBuffer, int Hz) {
     WavePeriod = SecondSoundBuffer->SamplePerSecond/Hz;
     
     // int16 SampleValue = ((RunningSampleIndex++/          (SquareWavePeriod/2))% 2) ? ToneVolume : -ToneVolume;
-    int16* SampleOut = SecondSoundBuffer->Samples;
+    int16* SampleOut = nullptr;
+    SampleOut = SecondSoundBuffer->Samples;
 
     for (int SampleIndex{0};
          SampleIndex < SecondSoundBuffer->SampleCounts;
@@ -54,20 +59,35 @@ internal void GameOutPutSound(Game_Sound_OutPut* SecondSoundBuffer, int Hz) {
         SineValue = sinf(tsine);            
         int16 SampleValue = (int16)(SineValue * ToneVolume);
 
+        // NOTE: These two lines caused memory leaked
         *SampleOut++ = SampleValue;
         *SampleOut++ = SampleValue;
-        
+        // NOTE: But Game didn't show any graphics because of different issues
+        // And that issues is I initualize SSample before the component value
         tsine += 2.0f*Pi32* 1.0f/(real32)WavePeriod;                            
     }                                               
     sprintf(Output, "Current Hert is: %d, Current WavePeriod is: %d \n", Hz, WavePeriod);
     OutputDebugStringA(Output);                      
 }
 
-void GameUpdateAndRender(Game_OffScreen_Buffer* OBuffer, Game_Sound_OutPut* SoundBuffer){
+void GameUpdateAndRender(Game_Input* Input, Game_OffScreen_Buffer* OBuffer,  Game_Sound_OutPut* SoundBuffer){
 
     local_persist int BlueOffset = 0;
     local_persist int GreenOffset = 0;
     local_persist int Hz = 256;
+
+    Game_Input* Input0 = &Input.Controller[0];
+    if(Input0->IsAnalog()){
+    Hz = (int)(128.0f*(Input0->EndedX));
+    BlueOffset = (int)(4.0f*(Input0->EndY));        
+    } else {
+        
+    }
+    
+    if(Input0->Down.EndedDown){
+        GreenOffset += 1;
+    }
+
     
     RenderSplendidGradient(OBuffer, BlueOffset, GreenOffset);
     GameOutPutSound(SoundBuffer, Hz);

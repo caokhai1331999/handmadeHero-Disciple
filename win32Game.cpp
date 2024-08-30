@@ -431,6 +431,13 @@ internal void Win32ResizeDIBSection(Win32_OffScreen_Buffer* OBuffer, int Width, 
 // NOTE: Keep in mind that try to all what you need to release back to memory
 // in a total thing so that I can release it in aggregate
 
+internal void ProcessXinputDigitalButton(DWORD ButtonBit){
+
+    Controller.State->HalfTransitionCount = (WasItDownPrevious == ? 1 : 0)
+    Controller.State->EndedDown = (Pad->wButtons &XINPUT_GAMEPAD_START)
+    
+}
+
 internal void Win32DisplayBufferWindow(HDC DeviceContext, int WindowWidth, int WindowHeight, Win32_OffScreen_Buffer* OBuffer ) {
     
     StretchDIBits(
@@ -631,7 +638,6 @@ int CALLBACK WinMain
             // int16* SSamples = nullptr;
             // NOTE: Don't call _alloc in the app loop it cause bug (it doesn't clean up entirely but just barely in the function)
 
-            int16* SSamples = (int16* )VirtualAlloc(0 , SoundOutPut.SecondBufferSize ,MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
             
             // win32_Sound_OutPut SoundOutPut = {};
             SoundOutPut.SamplePerSecond = 48000;
@@ -646,6 +652,8 @@ int CALLBACK WinMain
             // Hert(hz) is cycles per second
             SoundOutPut.SecondBufferSize = 2*SoundOutPut.BytesPerSample*SoundOutPut.SamplePerSecond;
             
+            int16* SSamples = (int16* )VirtualAlloc(0 , SoundOutPut.SecondBufferSize ,MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+            
             win32InitDSound(Window, SoundOutPut.SamplePerSecond, SoundOutPut.SecondBufferSize);
             Win32ClearSoundBuffer(&SoundOutPut);
             OutputDebugStringA("Sound is playing");
@@ -657,6 +665,7 @@ int CALLBACK WinMain
             
             while(GlobalRunning) {
                 MSG Message;
+                Game_Input Input = {};
                 // NOTE: This is where receiving the message to change
                 // for any change in window
                 while(PeekMessageA(&Message, 0, 0, 0, PM_REMOVE)) {
@@ -686,15 +695,17 @@ int CALLBACK WinMain
                         bool Back = (Pad->wButtons &XINPUT_GAMEPAD_BACK);
                         bool LThumb = (Pad->wButtons &XINPUT_GAMEPAD_LEFT_THUMB);
                         bool RThumb = (Pad->wButtons &XINPUT_GAMEPAD_RIGHT_THUMB);
+                            
+                        int16 StickX = Pad->sThumbLX;
+                        int16 StickY = Pad->sThumbLY;
+
                         bool LShoulder = (Pad->wButtons &XINPUT_GAMEPAD_LEFT_SHOULDER);
                         bool RShoulder = (Pad->wButtons &XINPUT_GAMEPAD_RIGHT_SHOULDER);
+                        
                         bool B = (Pad->wButtons &XINPUT_GAMEPAD_B);
                         bool A = (Pad->wButtons &XINPUT_GAMEPAD_A);
                         bool X = (Pad->wButtons &XINPUT_GAMEPAD_X);
                         bool Y = (Pad->wButtons &XINPUT_GAMEPAD_Y);
-
-                        int16 StickX = Pad->sThumbLX;
-                        int16 StickY = Pad->sThumbLY;
 
                     } else {
                         // NOTE: The controller is not available
@@ -766,7 +777,7 @@ int CALLBACK WinMain
                 // NOTE: Don't know why compiler couldn't find this function
                 // implementation after a little remove of few arguments
                 
-                GameUpdateAndRender(&ScreenBuffer, &SoundBuffer);
+                GameUpdateAndRender(&Input, &ScreenBuffer, &SoundBuffer);
                 
                 // TODO: This function just being called once
                 
