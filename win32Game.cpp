@@ -194,7 +194,8 @@ internal void win32InitCoreAudioSound(HWND window, int32 SamplePerSecond, int32 
                         pFormat->cbSize = 0;
 
                         if (SUCCEEDED(ppInterface1->Initialize(AUDCLNT_SHAREMODE_EXCLUSIVE, 0, 2, 0, pFormat, NULL))) {
-                                                 
+                            // NOTE: Buffer that has a one second duration
+                            // GetBuffer and ReleaseBuffer is correspond to the lock and unlockBuffer in the directSound one
                         } else {
                             // TODO: Do a diagnoses
                         }
@@ -431,11 +432,11 @@ internal void Win32ResizeDIBSection(Win32_OffScreen_Buffer* OBuffer, int Width, 
 // NOTE: Keep in mind that try to all what you need to release back to memory
 // in a total thing so that I can release it in aggregate
 
-internal void ProcessXinputDigitalButton(DWORD ButtonBit){
+internal void ProcessXinputDigitalButton(DWORD* XInputButtonState ,Game_Button_State* OldState ,DWORD ButtonBit, Game_Button_State* NewState){
 
-    Controller.State->HalfTransitionCount = (WasItDownPrevious == ? 1 : 0)
-    Controller.State->EndedDown = (Pad->wButtons &XINPUT_GAMEPAD_START)
-    
+    NewState->EndedDown = ((Pad->wButtons &ButtonBit) == ButtonBit);
+    NewState->HalfTransitionCount = ((OldState->EndedDown == NewState->EndedDown)? 1 : 0);
+       
 }
 
 internal void Win32DisplayBufferWindow(HDC DeviceContext, int WindowWidth, int WindowHeight, Win32_OffScreen_Buffer* OBuffer ) {
@@ -675,32 +676,36 @@ int CALLBACK WinMain
                     DispatchMessage(&Message);
                     TranslateMessage(&Message);
                 }
+
+                int MaxControllerCount = XUSER_MAX_COUNT;
+                if( MaxControllerCount > ArrayCount(Input.Controller)) {
+                    MaxControllerCount = ArrayCount(Input.Controller);   
+                }
                 
                 // NOTE: The update window function must afoot outside the getting
                 // message block and inside the running block
-                for(DWORD DeviceIndex{0}; DeviceIndex < XUSER_MAX_COUNT;
+                for(DWORD DeviceIndex{0}; DeviceIndex < MaxControllerCount;
                     DeviceIndex++)
                 {
                     XINPUT_STATE ControllerState;
                     
                     if(XinputGetState(DeviceIndex, &ControllerState) == ERROR_SUCCESS) {
                         // NOTE: The controller is plugged in
+                        Game_Controller_Input* Old_Controller;
+                        Game_Controller_Input* New_Controller;
+                        
                         XINPUT_GAMEPAD* Pad = &ControllerState.Gamepad;
-                                               
-                        bool Up = (Pad->wButtons &XINPUT_GAMEPAD_DPAD_UP);
-                        bool Down = (Pad->wButtons &XINPUT_GAMEPAD_DPAD_DOWN);
-                        bool Left = (Pad->wButtons &XINPUT_GAMEPAD_DPAD_LEFT);
-                        bool Right = (Pad->wButtons &XINPUT_GAMEPAD_DPAD_RIGHT);
-                        bool Start = (Pad->wButtons &XINPUT_GAMEPAD_START);
-                        bool Back = (Pad->wButtons &XINPUT_GAMEPAD_BACK);
-                        bool LThumb = (Pad->wButtons &XINPUT_GAMEPAD_LEFT_THUMB);
-                        bool RThumb = (Pad->wButtons &XINPUT_GAMEPAD_RIGHT_THUMB);
-                            
+
+                        ProcessXinputDigitalButton(Pad->wButtons ,Old_Controller-> Down ,XINPUT_GAMEPAD_A, New_Controller-> Down);
+                        ProcessXinputDigitalButton(Pad->wButtons ,Old_Controller-> Right ,XINPUT_GAMEPAD_B, New_Controller-> Right);
+                        ProcessXinputDigitalButton(Pad->wButtons ,Old_Controller-> Left ,XINPUT_GAMEPAD_X, New_Controller-> Left);
+                        ProcessXinputDigitalButton(Pad->wButtons ,Old_Controller-> Up ,XINPUT_GAMEPAD_Y, New_Controller-> Up);
+                        ProcessXinputDigitalButton(Pad->wButtons ,Old_Controller-> leftshoulder ,XINPUT_GAMEPAD_LFFT_SHOULDER, New_Controller-> LeftShoulder);
+                        ProcessXinputDigitalButton(Pad->wButtons ,Old_Controller-> Right ,XINPUT_GAMEPAD_RIGHT_SHOULDER, New_Controller-> RightShoulder);
+
+                        
                         int16 StickX = Pad->sThumbLX;
                         int16 StickY = Pad->sThumbLY;
-
-                        bool LShoulder = (Pad->wButtons &XINPUT_GAMEPAD_LEFT_SHOULDER);
-                        bool RShoulder = (Pad->wButtons &XINPUT_GAMEPAD_RIGHT_SHOULDER);
                         
                         bool B = (Pad->wButtons &XINPUT_GAMEPAD_B);
                         bool A = (Pad->wButtons &XINPUT_GAMEPAD_A);
