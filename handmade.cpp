@@ -87,7 +87,6 @@ void GameUpdateAndRender(Game_Input* Input, Game_OffScreen_Buffer* OBuffer,  Gam
     if(Input0->Down.EndedDown){
         GreenOffset += 1;
     }
-
     
     RenderSplendidGradient(OBuffer, BlueOffset, GreenOffset);
     GameOutPutSound(SoundBuffer, Hz);

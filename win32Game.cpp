@@ -662,11 +662,15 @@ int CALLBACK WinMain
             LARGE_INTEGER LastCounter;
             QueryPerformanceCounter(&LastCounter);
             uint64 LastCycleCounts;
+            
+            Game_Input Input[2] = {};
+            Game_Input* OldInput = &Input[0];
+            Game_Input* NewInput = &Input[1];
+
             LastCycleCounts = __rdtsc();
             
             while(GlobalRunning) {
                 MSG Message;
-                Game_Input Input = {};
                 // NOTE: This is where receiving the message to change
                 // for any change in window
                 while(PeekMessageA(&Message, 0, 0, 0, PM_REMOVE)) {
@@ -684,24 +688,23 @@ int CALLBACK WinMain
                 
                 // NOTE: The update window function must afoot outside the getting
                 // message block and inside the running block
-                for(DWORD DeviceIndex{0}; DeviceIndex < MaxControllerCount;
-                    DeviceIndex++)
+                for(DWORD ControllerIndex{0}; ControllerIndex < MaxControllerCount;
+                    ControllerIndex++)
                 {
                     XINPUT_STATE ControllerState;
                     
                     if(XinputGetState(DeviceIndex, &ControllerState) == ERROR_SUCCESS) {
                         // NOTE: The controller is plugged in
-                        Game_Controller_Input* Old_Controller;
-                        Game_Controller_Input* New_Controller;
+                        Game_Controller_Input* Old_Controller = &OldInput->Controller[ControllerIndex];
+                        Game_Controller_Input* New_Controller = &NewInput->Controller[ControllerIndex];
                         
                         XINPUT_GAMEPAD* Pad = &ControllerState.Gamepad;
-
-                        ProcessXinputDigitalButton(Pad->wButtons ,Old_Controller-> Down ,XINPUT_GAMEPAD_A, New_Controller-> Down);
-                        ProcessXinputDigitalButton(Pad->wButtons ,Old_Controller-> Right ,XINPUT_GAMEPAD_B, New_Controller-> Right);
-                        ProcessXinputDigitalButton(Pad->wButtons ,Old_Controller-> Left ,XINPUT_GAMEPAD_X, New_Controller-> Left);
-                        ProcessXinputDigitalButton(Pad->wButtons ,Old_Controller-> Up ,XINPUT_GAMEPAD_Y, New_Controller-> Up);
-                        ProcessXinputDigitalButton(Pad->wButtons ,Old_Controller-> leftshoulder ,XINPUT_GAMEPAD_LFFT_SHOULDER, New_Controller-> LeftShoulder);
-                        ProcessXinputDigitalButton(Pad->wButtons ,Old_Controller-> Right ,XINPUT_GAMEPAD_RIGHT_SHOULDER, New_Controller-> RightShoulder);
+                        ProcessXinputDigitalButton(Pad->wButtons ,&Old_Controller-> Down ,XINPUT_GAMEPAD_A, &New_Controller-> Down);
+                        ProcessXinputDigitalButton(Pad->wButtons ,&Old_Controller-> Right ,XINPUT_GAMEPAD_B, &New_Controller-> Right);
+                        ProcessXinputDigitalButton(Pad->wButtons ,&Old_Controller-> Left ,XINPUT_GAMEPAD_X, &New_Controller-> Left);
+                        ProcessXinputDigitalButton(Pad->wButtons ,&Old_Controller-> Up ,XINPUT_GAMEPAD_Y, &New_Controller-> Up);
+                        ProcessXinputDigitalButton(Pad->wButtons ,&Old_Controller-> leftshoulder ,XINPUT_GAMEPAD_LFFT_SHOULDER, &New_Controller-> LeftShoulder);
+                        ProcessXinputDigitalButton(Pad->wButtons ,&Old_Controller-> Right ,XINPUT_GAMEPAD_RIGHT_SHOULDER, &New_Controller-> RightShoulder);
 
                         
                         int16 StickX = Pad->sThumbLX;
@@ -782,7 +785,7 @@ int CALLBACK WinMain
                 // NOTE: Don't know why compiler couldn't find this function
                 // implementation after a little remove of few arguments
                 
-                GameUpdateAndRender(&Input, &ScreenBuffer, &SoundBuffer);
+                GameUpdateAndRender(&NewInput, &ScreenBuffer, &SoundBuffer);
                 
                 // TODO: This function just being called once
                 
@@ -836,7 +839,11 @@ int CALLBACK WinMain
                 LastCycleCounts = EndCycleCounts;
                 // MULPD -> real32 ==> 128 bits / 32 bits -> 4 real32 packs per register 
                 // MULPS -> real64 ==> 128 bits / 64 bits -> 2 real32 packs per register  
-                // ReleaseDC(Window, DeviceContext);                
+                // ReleaseDC(Window, DeviceContext);
+
+                Game_Input* Temp = NewInput;
+                NewInput = OldInput; // ???? still don't understand
+                OldInput = Temp;
             }
             
         }else{
