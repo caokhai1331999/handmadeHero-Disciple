@@ -11,6 +11,8 @@
 // because is will cause difficulties for shipping code or changing platform
 // and u will waste alot of time in a unnecessary big chunk of code
 
+// TODO: Swap min, max, macros?
+
 internal void RenderSplendidGradient(Game_OffScreen_Buffer* OBuffer, int XOffset, int YOffset) {
     // RR GG BB
     // Row is a pointer to every line of bitmapMemory
