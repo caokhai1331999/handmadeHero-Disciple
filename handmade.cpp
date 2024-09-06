@@ -78,9 +78,10 @@ void GameUpdateAndRender(Game_Input* Input, Game_OffScreen_Buffer* OBuffer,  Gam
     local_persist int GreenOffset = 0;
     local_persist int Hz = 256;
 
-    Game_Input* Input0 = &Input.Controller[0];
-    if(Input0->IsAnalog()){
-    Hz = (int)(128.0f*(Input0->EndedX));
+    Game_Controller_Input* Input0 = &Input->Controller[0];
+    
+    if(Input0->IsAnalog){
+    Hz = (int)(128.0f*(Input0->EndX));
     BlueOffset = (int)(4.0f*(Input0->EndY));        
     } else {
         

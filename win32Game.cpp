@@ -432,9 +432,9 @@ internal void Win32ResizeDIBSection(Win32_OffScreen_Buffer* OBuffer, int Width, 
 // NOTE: Keep in mind that try to all what you need to release back to memory
 // in a total thing so that I can release it in aggregate
 
-internal void ProcessXinputDigitalButton(DWORD* XInputButtonState ,Game_Button_State* OldState ,DWORD ButtonBit, Game_Button_State* NewState){
+internal void ProcessXinputDigitalButton(DWORD XInputButtonState ,Game_Button_State* OldState ,DWORD ButtonBit, Game_Button_State* NewState){
 
-    NewState->EndedDown = ((Pad->wButtons &ButtonBit) == ButtonBit);
+    NewState->EndedDown = ((XInputButtonState & ButtonBit) == ButtonBit);
     NewState->HalfTransitionCount = ((OldState->EndedDown == NewState->EndedDown)? 1 : 0);
        
 }
@@ -682,8 +682,8 @@ int CALLBACK WinMain
                 }
 
                 int MaxControllerCount = XUSER_MAX_COUNT;
-                if( MaxControllerCount > ArrayCount(Input.Controller)) {
-                    MaxControllerCount = ArrayCount(Input.Controller);   
+                if( MaxControllerCount > ArrayCount(Input->Controller)) {
+                    MaxControllerCount = ArrayCount(Input->Controller);   
                 }
                 
                 // NOTE: The update window function must afoot outside the getting
@@ -693,17 +693,18 @@ int CALLBACK WinMain
                 {
                     XINPUT_STATE ControllerState;
                     
-                    if(XinputGetState(DeviceIndex, &ControllerState) == ERROR_SUCCESS) {
+                    if(XinputGetState(ControllerIndex, &ControllerState) == ERROR_SUCCESS) {
                         // NOTE: The controller is plugged in
                         Game_Controller_Input* Old_Controller = &OldInput->Controller[ControllerIndex];
                         Game_Controller_Input* New_Controller = &NewInput->Controller[ControllerIndex];
                         
                         XINPUT_GAMEPAD* Pad = &ControllerState.Gamepad;
+                        
                         ProcessXinputDigitalButton(Pad->wButtons ,&Old_Controller-> Down ,XINPUT_GAMEPAD_A, &New_Controller-> Down);
                         ProcessXinputDigitalButton(Pad->wButtons ,&Old_Controller-> Right ,XINPUT_GAMEPAD_B, &New_Controller-> Right);
                         ProcessXinputDigitalButton(Pad->wButtons ,&Old_Controller-> Left ,XINPUT_GAMEPAD_X, &New_Controller-> Left);
                         ProcessXinputDigitalButton(Pad->wButtons ,&Old_Controller-> Up ,XINPUT_GAMEPAD_Y, &New_Controller-> Up);
-                        ProcessXinputDigitalButton(Pad->wButtons ,&Old_Controller-> leftshoulder ,XINPUT_GAMEPAD_LFFT_SHOULDER, &New_Controller-> LeftShoulder);
+                        ProcessXinputDigitalButton(Pad->wButtons ,&Old_Controller-> LeftShoulder ,XINPUT_GAMEPAD_LEFT_SHOULDER, &New_Controller-> LeftShoulder);
                         ProcessXinputDigitalButton(Pad->wButtons ,&Old_Controller-> Right ,XINPUT_GAMEPAD_RIGHT_SHOULDER, &New_Controller-> RightShoulder);
 
                         
@@ -785,7 +786,7 @@ int CALLBACK WinMain
                 // NOTE: Don't know why compiler couldn't find this function
                 // implementation after a little remove of few arguments
                 
-                GameUpdateAndRender(&NewInput, &ScreenBuffer, &SoundBuffer);
+                GameUpdateAndRender(NewInput, &ScreenBuffer, &SoundBuffer);
                 
                 // TODO: This function just being called once
                 

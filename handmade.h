@@ -17,6 +17,8 @@
  */
 
 
+#define ArrayCount(Array) (sizeof(Array) / sizeof(Array[0]))
+
 struct Game_OffScreen_Buffer{  
     // BITMAPINFO Bitmapinfo;
     // HBITMAP BitmapHandle;
