@@ -699,6 +699,33 @@ int CALLBACK WinMain
                         Game_Controller_Input* New_Controller = &NewInput->Controller[ControllerIndex];
                         
                         XINPUT_GAMEPAD* Pad = &ControllerState.Gamepad;
+
+                        bool32 Up =  (Pad->wButtons & XINPUT_GAMEPAD_DPAD_UP);
+                        bool32 Down =  (Pad->wButtons & XINPUT_GAMEPAD_DPAD_DOWN);
+                        bool32 Left =  (Pad->wButtons & XINPUT_GAMEPAD_DPAD_LEFT);
+                        bool32 Right =  (Pad->wButtons & XINPUT_GAMEPAD_DPAD_RIGHT);
+
+                        New_Controller->IsAnalog = true;
+                        New_Controller->StartX = Old_Controller->EndX;
+                        New_Controller->StartY = Old_Controller->EndY;
+
+                        // TODO: Mix/Max macros
+                        real32 X;
+
+                        if (Pad->sThumbLX < 0){
+                            X = (real32)Pad->sThumbLX/ -32768.0f;
+                        } else {
+                            X = (real32)Pad->sThumbLX/ 32768.0f;                            
+                        }
+
+                        real32 Y;
+                        if (Pad->sThumbLY < 0){
+                            Y = (real32)Pad->sThumbLY/ -32768.0f;
+                        } else {
+                            Y = (real32)Pad->sThumbLY/ 32768.0f;                            
+                        }
+                        
+                        New_Controller->MinY = New_Controller->MaxY = New_Controller->EndY = Y;
                         
                         ProcessXinputDigitalButton(Pad->wButtons ,&Old_Controller-> Down ,XINPUT_GAMEPAD_A, &New_Controller-> Down);
                         ProcessXinputDigitalButton(Pad->wButtons ,&Old_Controller-> Right ,XINPUT_GAMEPAD_B, &New_Controller-> Right);
@@ -711,10 +738,8 @@ int CALLBACK WinMain
                         int16 StickX = Pad->sThumbLX;
                         int16 StickY = Pad->sThumbLY;
                         
-                        bool B = (Pad->wButtons &XINPUT_GAMEPAD_B);
-                        bool A = (Pad->wButtons &XINPUT_GAMEPAD_A);
-                        bool X = (Pad->wButtons &XINPUT_GAMEPAD_X);
-                        bool Y = (Pad->wButtons &XINPUT_GAMEPAD_Y);
+                        bool32 B = (Pad->wButtons &XINPUT_GAMEPAD_B);
+                        bool32 A = (Pad->wButtons &XINPUT_GAMEPAD_A);
 
                     } else {
                         // NOTE: The controller is not available
