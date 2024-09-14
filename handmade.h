@@ -19,6 +19,8 @@
 
 #define ArrayCount(Array) (sizeof(Array) / sizeof(Array[0]))
 
+
+
 struct Game_OffScreen_Buffer{  
     // BITMAPINFO Bitmapinfo;
     // HBITMAP BitmapHandle;
@@ -43,6 +45,8 @@ struct Game_Button_State{
 
 union Game_Controller_Input{
 
+    // NOTE: The union make it child var lie in one place and can be found in one
+    // address
     bool32 IsAnalog;
     Game_Button_State State[6]; // This is C type pointer remember that
     
