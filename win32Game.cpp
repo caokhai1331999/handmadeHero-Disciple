@@ -29,6 +29,7 @@
 #include <cmath>
 #include <iostream>
 #include <Windows.h>
+#include <GL/gl.h>
 #include <xinput.h>
 #include <DSound.h>
 #include <combaseapi.h>
