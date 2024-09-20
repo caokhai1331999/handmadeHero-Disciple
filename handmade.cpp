@@ -72,12 +72,16 @@ internal void GameOutPutSound(Game_Sound_OutPut* SecondSoundBuffer, int Hz) {
     OutputDebugStringA(Output);                      
 }
 
-void GameUpdateAndRender(Game_Input* Input, Game_OffScreen_Buffer* OBuffer,  Game_Sound_OutPut* SoundBuffer){
+void GameUpdateAndRender(Game_Memory* Memory,Game_Input* Input, Game_OffScreen_Buffer* OBuffer,  Game_Sound_OutPut* SoundBuffer){
 
-    local_persist int BlueOffset = 0;
-    local_persist int GreenOffset = 0;
-    local_persist int Hz = 256;
+    Game_State* State = new Game_State;
 
+    if(Memory->Isnitialized){
+        State->Hz = 256;
+        State->BlueOffset = 0;
+        State->GreenOffset = 0;
+    }
+    
     Game_Controller_Input* Input0 = &Input->Controller[0];
     
     if(Input0->IsAnalog){

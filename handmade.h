@@ -77,6 +77,19 @@ union Game_Controller_Input{
 struct Game_Input{
     Game_Controller_Input Controller[4];
 }Input;
+
+struct Game_Memory{
+    bool32 IsInitialized; 
+    uint32 MemorySize;
+    void* PermanentStorage;
+};
+
+struct Game_State{
+    int BlueOffset = 0;
+    int GreenOffset = 0;
+    int Hz = 256;    
+};
+
 // TODO: Allow the sample offset here for more robust platform options
 
 internal void GameOutputSound(Game_Sound_OutPut* SecondSoundBuffer, int Hz);
