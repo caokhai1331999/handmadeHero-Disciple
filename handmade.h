@@ -31,7 +31,6 @@ struct Game_OffScreen_Buffer{
     const int BytesPerPixel = 4;
 };
 
-
 struct Game_Sound_OutPut{  
     int16 SamplePerSecond;
     int SampleCounts;
