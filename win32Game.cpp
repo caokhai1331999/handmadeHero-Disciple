@@ -436,8 +436,7 @@ internal void Win32ResizeDIBSection(Win32_OffScreen_Buffer* OBuffer, int Width, 
 internal void ProcessXinputDigitalButton(DWORD XInputButtonState ,Game_Button_State* OldState ,DWORD ButtonBit, Game_Button_State* NewState){
 
     NewState->EndedDown = ((XInputButtonState & ButtonBit) == ButtonBit);
-    NewState->HalfTransitionCount = ((OldState->EndedDown == NewState->EndedDown)? 1 : 0);
-       
+    NewState->HalfTransitionCount = ((OldState->EndedDown == NewState->EndedDown)? 1 : 0);       
 }
 
 internal void Win32DisplayBufferWindow(HDC DeviceContext, int WindowWidth, int WindowHeight, Win32_OffScreen_Buffer* OBuffer ) {
