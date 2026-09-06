@@ -264,12 +264,13 @@ void set_rigid_body(glm::vec3* init_pos){
 // maybe this reason is solid enough
 
 vertex_ spawn_vertex_data(uint16 spaceID){
-    vertex_ basic_vertex_data = { {{}, {}, {}}, {{}, {}, {}}, {{}, {}, {}} }; // extrapolate from this one
-    vertex_ vertex = {};    
+    vertex_ vertex = { {{}, {}, {}},
+                       {{}, {}, {}},
+                       {{}, {}, {}} }; // extrapolate from this one
 
-    vertex.position[] = basic_vertex_data.position *;
-    vertex.normal[] = ;
-    vertex.textcoord[] = ;
+    vertex.position[] =  {, , };
+    vertex.normal[] = {1.0f *, 1.0f *, 1.0f *};
+    vertex.textcoord[] = {*, *};
 
     return vertex;
 }

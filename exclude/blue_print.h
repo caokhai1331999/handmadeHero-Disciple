@@ -139,6 +139,12 @@ struct{
             float x, y;
         }
         float E[2];
+        inline &operator *(float scale){
+            if(scale != 0.0f){
+                x *= scale;
+                y *= scale;                
+            }
+        };
     }    
 }
 // function
