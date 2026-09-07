@@ -2690,3 +2690,11 @@ want.
 
 ---------------- Sun, 06 Sep 26: 09:50AM
 
+
+---------------- Mon, 07 Sep 26: 10:29AM
+
+NOTE: Maybe the address of the elements inside linked-list, struct are linear.
+Casey know that and created one of his own liked-list which increment the
+address based on the data's size that has been used.
+. Currently I can't draw world with miscellaneous of primitive, so
+I have to stick with one such as polygon or cube.

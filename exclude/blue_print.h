@@ -206,6 +206,7 @@ enum effect_type:be_drawn_type{
 };
 
 //==========================================================
+
 struct shape_vertices_data{
     float* data_; 
     unsigned int* VAO;
@@ -283,6 +284,15 @@ typedef uint8 entity_type;
 // Be pragmatic, think about what its real use in shader and game play(collision)
 // we need a tracker to watch all of entities in room
 // NOTE: what I'm gonna do with map unit and entity
+struct entity_power_system{
+    bool32 range_effect;
+    uint16 power;
+    uint16 shield;
+    uint16 mana;
+    ;
+};
+// NOTE: May be we need to do entity system in the lower level
+// replace them with the integer and do bitwise operator on them
 struct map_unit{ // when to use map_unit and when to use entity
 // This is just should be an entity
     // store multiple vec3 is not cheap,we need to find the

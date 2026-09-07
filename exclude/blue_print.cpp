@@ -263,12 +263,11 @@ void set_rigid_body(glm::vec3* init_pos){
 // other from just mere position we still have normal and textcoord
 // maybe this reason is solid enough
 
-vertex_ spawn_vertex_data(uint16 spaceID){
-    vertex_ vertex = { {{}, {}, {}},
-                       {{}, {}, {}},
-                       {{}, {}, {}} }; // extrapolate from this one
-
-    vertex.position[] =  {, , };
+vertex_ spawn_vertex_data(uint16 spaceID, simple_volume_map* world_map/*something like plane dim*/){
+    float origin_pos[3] = {0.0f, 0.0f, 0.0f};// we need to have
+// pos from spaceID
+    vertex.position[] = {(float)i%world_map->w, (i>(world_map->w*world_map->l))?(float)(i/(world_map->w*world_map->h)):0.0f, i>world_map->w?(i/world_map->w)%world_map->l:0.0f};;
+// normal and textcoords from pos /??/
     vertex.normal[] = {1.0f *, 1.0f *, 1.0f *};
     vertex.textcoord[] = {*, *};
 
@@ -494,43 +493,6 @@ extern "C" __declspec(dllexport) void Load_Textures_for_OpenGL_(Platform_Propert
     ReloadGLFunction(Game_Platform);
     Load_Textures_for_OpenGL(Graphic_Obj, media_folder_path);
 };
-
-// NOTE: ON WORKING: construct each mesh based on type(but how to clarify these one)
-// imagine all contain in a cube (cube play as anchor role)
-vertex_ spawn_vertex(uint16 index_from_origin){
-    vertex_ value;
-    value.position[0] = (index_from_origin * 1.0f);
-    value.position[1];
-    value.position[2];
-
-    value.textcoord =;
-    value.normal =;
-    return value;
-}
-
-M_Mesh construct_mesh(/*what to put inside this???*/map_drawn_element drawn_type_, const char* data_buffer_pointer){
-// we need to have a failed check flag for this asset loop loader
-    // name
-    M_Mesh added_mesh = {};
-    vertex_ temp_vertex = {};
-
-    for(unsigned int i; i < sizeof(*data_buffer_pointer); i++){
-        added_mesh = (*data_buffer_pointer)[i]
-    }
-    // VAO
-
-    added_mesh.drawn_type = drawn_type_;
-    // This one is already in the folder loop texture loader
-
-    // texture
-    added_mesh.textures[NORMAL] = drawn_type_;    
-    added_mesh.textures[DIFFUSE] = drawn_type_;    
-    added_mesh.textures[SPECULAR] = drawn_type_;    
-    added_mesh.textures[EMISSION] = drawn_type_;    /*if available*/
-
-    // Light    
-    return added_mesh;
-}
 
 // Still think about this one.=================================
 void load_primitive_vertices_data(graphic_property* graphic_obj, shape_vertices_store* vertices_store){
