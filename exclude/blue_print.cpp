@@ -263,18 +263,22 @@ void set_rigid_body(glm::vec3* init_pos){
 // other from just mere position we still have normal and textcoord
 // maybe this reason is solid enough
 
-vertex_ spawn_vertex_data(uint16 spaceID, simple_volume_map* world_map/*something like plane dim*/){
+vertex_ spawn_polygon_vertex_data(uint16 plane_spaceID, uint8 vertexID, simple_volume_map* world_map/*something like plane dim*/){
+    // mark the id of the vertex to intrapolate the normal and textcoord
     float origin_pos[3] = {0.0f, 0.0f, 0.0f};// we need to have
 // pos from spaceID
-    vertex.position[] = {(float)i%world_map->w, (i>(world_map->w*world_map->l))?(float)(i/(world_map->w*world_map->h)):0.0f, i>world_map->w?(i/world_map->w)%world_map->l:0.0f};;
+    vertex.position = {(float)i%world_map->w, ((world_map->w*world_map->l))?(float)(plane_spaceID/(world_map->w*world_map->h)):0.0f, plane_spaceID>world_map->w?(plane_spaceID/world_map->w)%world_map->l:0.0f};
 // normal and textcoords from pos /??/
-    vertex.normal[] = {1.0f *, 1.0f *, 1.0f *};
-    vertex.textcoord[] = {*, *};
-
+    // NOTE: This one is tricky how do we know the vertex is above or below the visible drawn plane
+    // the normal has to be related with the point light source 
+    vertex.normal = {vertex.position[0], vertex.position[1]*, vertex.position[2]*};
+    vertex.textcoord = {vertex.position[0] == ?:, vertex.position[1]==?:};
     return vertex;
 }
 // NOTE: assign graphic id to the map unit to use it later for in mass instancing draw
-map_unit spawn_map_unit(uint16 spaceID){
+// IMPORTANT!!: how can I draw out a sketch of object 
+map_unit spawn_map_unit(uint16 spaceID, ){
+//NOTE: one thing we are stupid about is that we have to know the plane or polygon we need to draw
     map_unit temp_unit;
     spawn_vertex();
 }
@@ -286,8 +290,6 @@ void OutputLightingTexture(Voxel* table){
 // NOTE: On Working here
 //=====================WORKING==============================
 void construct_vertices_data(vertex* vertices, const simple_volume_map* map){
-    unsigned int maker = 0;
-    map;
     while(marker < map->size - 1){
         .push_back(map->spawn_map_unit(map->map_content[marker]));
     };

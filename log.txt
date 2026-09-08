@@ -2698,3 +2698,8 @@ Casey know that and created one of his own liked-list which increment the
 address based on the data's size that has been used.
 . Currently I can't draw world with miscellaneous of primitive, so
 I have to stick with one such as polygon or cube.
+
+---------------- Tue, 08 Sep 26: 09:43AM
+
+NOTE: finally clear thought. we need to sketch a prototype of simple shape
+object -> then intrapolate the vertex data of these. BUT HOW????
