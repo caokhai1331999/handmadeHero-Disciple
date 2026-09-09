@@ -2703,3 +2703,8 @@ I have to stick with one such as polygon or cube.
 
 NOTE: finally clear thought. we need to sketch a prototype of simple shape
 object -> then intrapolate the vertex data of these. BUT HOW????
+
+---------------- Wed, 09 Sep 26: 11:04AM
+
+NOTE: so glImagexxx function is the function to send the texture/image's data down to
+gpu(graphic card)

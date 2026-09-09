@@ -26,9 +26,7 @@ private:
 };
 
 struct GamePlay_Entity{
-
     int storage; // ??
-
     bool32 is_moving;
     bool32 is_dead;
 
@@ -112,6 +110,9 @@ struct triangle{
 
 struct plane{
     face_type_rhs face;
+    // face angle from the horizontal plane;
+    float face_angle_;
+    uint8 spaceID;
     float size;
     vertex vertices[6];
     index indices[6];

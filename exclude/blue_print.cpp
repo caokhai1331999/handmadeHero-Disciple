@@ -263,16 +263,19 @@ void set_rigid_body(glm::vec3* init_pos){
 // other from just mere position we still have normal and textcoord
 // maybe this reason is solid enough
 
-vertex_ spawn_polygon_vertex_data(uint16 plane_spaceID, uint8 vertexID, simple_volume_map* world_map/*something like plane dim*/){
+vertex_ spawn_polygon_vertex_data(plane* plane_info, uint8 vertexID, simple_volume_map* world_map/*something like plane dim*/){
     // mark the id of the vertex to intrapolate the normal and textcoord
     float origin_pos[3] = {0.0f, 0.0f, 0.0f};// we need to have
 // pos from spaceID
-    vertex.position = {(float)i%world_map->w, ((world_map->w*world_map->l))?(float)(plane_spaceID/(world_map->w*world_map->h)):0.0f, plane_spaceID>world_map->w?(plane_spaceID/world_map->w)%world_map->l:0.0f};
+    vertex.position = {(float)i%world_map->w, ((world_map->w*world_map->l))?(float)(plane_info->spaceID/(world_map->w*world_map->h)):0.0f, plane_info->spaceID>world_map->w?(plane_info->spaceID/world_map->w)%world_map->l:0.0f};
 // normal and textcoords from pos /??/
     // NOTE: This one is tricky how do we know the vertex is above or below the visible drawn plane
-    // the normal has to be related with the point light source 
-    vertex.normal = {vertex.position[0], vertex.position[1]*, vertex.position[2]*};
-    vertex.textcoord = {vertex.position[0] == ?:, vertex.position[1]==?:};
+    // the normal has to be related with the point light source
+    uint8 original_vector[3] = {0, 1, 0};
+    vertex.normal = glm::normalize(glm::cos(plane_info->face_angle_) * original_vector);
+    // x(0 or 1), y(0 or -1)
+    vertex.textcoord = {vertexID<2?0:1, vertexID%2!=0?0:-1};
+
     return vertex;
 }
 // NOTE: assign graphic id to the map unit to use it later for in mass instancing draw
@@ -289,9 +292,10 @@ void OutputLightingTexture(Voxel* table){
 
 // NOTE: On Working here
 //=====================WORKING==============================
-void construct_vertices_data(vertex* vertices, const simple_volume_map* map){
+void construct_plane_vertices_data(vertex* vertices, const simple_volume_map* map){
+    plane current_plane = {};
     while(marker < map->size - 1){
-        .push_back(map->spawn_map_unit(map->map_content[marker]));
+        map.push_back(map->spawn_map_unit(map->map_content[marker]));
     };
 }
 //=====================WORKING==============================
