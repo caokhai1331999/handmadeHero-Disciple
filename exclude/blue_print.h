@@ -108,12 +108,15 @@ struct triangle{
     float size;
 };
 
+
+
 struct plane{
-    face_type_rhs face;
-    // face angle from the horizontal plane;
-    float face_angle_;
+    // face angle from ???
+    float angle_from_ox;
+    float angle_from_oz;
+// Position
     uint8 spaceID;
-    float size;
+    float scale;
     vertex vertices[6];
     index indices[6];
     // Should put it in here
@@ -164,6 +167,7 @@ struct M_Mesh{
     // NOTE: Can we spawn other vertices from these first triangle/polygon one
     // There are two basic use cases: one is load vertices data from model(fbx, dae...), two is spawn one out
     std::vector<vertex> vertices_data;
+    std::vector<plane>plane_group;
     //vertex* vertices;
     std::vector<unsigned int> indices_data;
     //unsigned int* indices;

@@ -2708,3 +2708,8 @@ object -> then intrapolate the vertex data of these. BUT HOW????
 
 NOTE: so glImagexxx function is the function to send the texture/image's data down to
 gpu(graphic card)
+
+---------------- Thu, 10 Sep 26: 11:44AM
+
+the glTexsubImage is to create a new image for texture not like the glTextImage
+which allocate the original texture.
