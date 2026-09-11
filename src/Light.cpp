@@ -19,10 +19,10 @@ static void IncreaseFontAlpha(const unsigned char* source, void* dest, const Gly
         uint8* Dest = DestRow;
         for(uint8 x = 0; x < glyp->w; x++){
             uint8 alpha = *Source++;
-            *Dest++ = ((alpha << 24)|
-                       (alpha << 16)|
-                       (alpha <<  8)|
-                       (alpha <<  0));
+            *Dest++ = ((alpha << 24)| // r
+                       (alpha << 16)| // g
+                       (alpha <<  8)| // b
+                       (alpha <<  0));// a
             //*Dest++ = *Source++;
         }
             DestRow -= glyp->w;
@@ -203,7 +203,8 @@ void DrawFont(const Platform_Properties* Game_Platform, const Win32_OffScreen_Bu
             glBindTexture(GL_TEXTURE_2D, GL_TEXTURE0+map->TextureID);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RG, glyp_p->w, glyp_p->h, 0, GL_RG, GL_UNSIGNED_BYTE, glyp_p->upside_down_bitmap);
             shader->setVec4(name.c_str(), current_glyp_specs);
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+            //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+            glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, 1);
             //drawtime++;
             //printf("Draw %d times\n", drawtime);
         }

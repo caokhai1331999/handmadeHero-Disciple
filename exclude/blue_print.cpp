@@ -66,7 +66,7 @@ unsigned int LoadCubeMap(const char* path){
       //                           . primitive for drawing:(mesh)
       //                                       .. position, texture
 //
-//===> Render: feed shader : . fixed primitve data |  . VAO
+//===> Render: feed shader : . fixed primitve data |  . VAO (contains shape's vertices's position, textcoord and normal)
       //                     . uniform offset data |  . shader
       //                     . camera pos for light|  . -//-
 
@@ -294,6 +294,7 @@ void OutputLightingTexture(Voxel* table){
 //=====================WORKING==============================
 void construct_plane_vertices_data(vertex* vertices, const simple_volume_map* map){
     plane current_plane = {};
+    
     while(marker < map->size - 1){
         map.push_back(map->spawn_map_unit(map->map_content[marker]));
     };
@@ -504,7 +505,7 @@ extern "C" __declspec(dllexport) void Load_Textures_for_OpenGL_(Platform_Propert
 void load_primitive_vertices_data(graphic_property* graphic_obj, shape_vertices_store* vertices_store){
     // data can be loaded from text file!!;
     // we need to copy whole data not just the address
-external float plane_vertices[] = {
+float plane_vertices[] = {
     // positions
     // texture Coords (note we set these higher than 1 (together with GL_REPEAT as texture wrapping mode). this will cause the floor texture to repeat)
     // x,    y,    z    //Normal    //TexCoord

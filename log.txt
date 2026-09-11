@@ -2713,3 +2713,11 @@ gpu(graphic card)
 
 the glTexsubImage is to create a new image for texture not like the glTextImage
 which allocate the original texture.
+
+---------------- Fri, 11 Sep 26: 10:37AM
+
+if I use the just mere coord from cpu the quad contain more than one
+letter/glyph. why????
+NOTE: Actually the vertices pos of nearly stay the same except z value 
+      - How can we draw a simple model from scratch and apply light on it
+      without loading any model file.

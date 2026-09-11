@@ -108,13 +108,28 @@ struct triangle{
     float size;
 };
 
-
+struct default_plane_vertices{
+    external float plane_vertices[] = {
+        // positions
+        // texture Coords (note we set these higher than 1 (together with GL_REPEAT as texture wrapping mode). this will cause the floor texture to repeat)
+        // x,    y,    z    //Normal    //TexCoord
+        1.0f, -1.0f, 1.0f,  1.0f, 0.0f,
+       -1.0f, -1.0f, 1.0f,  0.0f, 0.0f, 
+       -1.0f,  1.0f, 1.0f,  0.0f, 1.0f,
+// so the last vertex of the 
+       -1.0f,  1.0f, 1.0f,  0.0f, 1.0f,                   
+        1.0f,  1.0f, 1.0f,  1.0f, 1.0f,
+        1.0f, -1.0f, 1.0f,  1.0f, 0.0f
+    };
+};
 
 struct plane{
     // face angle from ???
+    // how to present shown face direction
     float angle_from_ox;
     float angle_from_oz;
-// Position
+    // Position of the center of the plane
+    // so the vertices will be 
     uint8 spaceID;
     float scale;
     vertex vertices[6];
@@ -137,16 +152,20 @@ struct cube{
 // should I put light here
 //NOTE: A mesh is a groups of vertex's data(all possible) in order to draw shape
 // union enable its member have the same memory location
-struct{
-    union v3{
-        struct v3{
-            float x, y;
-        }
-        float E[2];
+struct v3{
+    union {
+        struct {
+            float x, y, z;
+        };
+        struct {
+            float r, g, b;
+        };
+        float E[3];
         inline &operator *(float scale){
             if(scale != 0.0f){
                 x *= scale;
-                y *= scale;                
+                y *= scale;
+                z *= scale;
             }
         };
     }    
@@ -211,6 +230,13 @@ enum effect_type:be_drawn_type{
 };
 
 //==========================================================
+
+uint32* pixel_data;
+// rgba or argb
+uint8 r  = pixel_data >> 24;
+uint8 g  = pixel_data >> 16;
+uint8 r  = pixel_data >>  8;
+uint8 r  = pixel_data >>  0;
 
 struct shape_vertices_data{
     float* data_; 
@@ -294,10 +320,10 @@ struct entity_power_system{
     uint16 power;
     uint16 shield;
     uint16 mana;
-    ;
 };
 // NOTE: May be we need to do entity system in the lower level
 // replace them with the integer and do bitwise operator on them
+
 struct map_unit{ // when to use map_unit and when to use entity
 // This is just should be an entity
     // store multiple vec3 is not cheap,we need to find the
@@ -312,7 +338,7 @@ struct map_unit{ // when to use map_unit and when to use entity
     // model space shape vertices data(pos, textcoord, normal)
 //=======================================================
     // This is for position reconstruction
-    uint16 space_id;
+    uint16 space_id;// also the pos of the center of quad
     bool32 tangible;
     bool32 movable;
 
