@@ -45,9 +45,15 @@ void UpdateCamera (Camera* camera, float* DelayRatio) {
 
             camera->mouse.LastX = camera->mouse.xPos;
             camera->mouse.LastY = camera->mouse.yPos;        
-            
-            camera->Yaw += camera->mouse.MouseXOffset * camera->speed * SENSITIVITY;
-            camera->Pitch += camera->mouse.MouseYOffset * camera->speed * SENSITIVITY;
+
+            if(!camera->move_perspective_instead){
+                camera->Yaw += camera->mouse.MouseXOffset * camera->speed * SENSITIVITY;
+                camera->Pitch += camera->mouse.MouseYOffset * camera->speed * SENSITIVITY;
+            }else{
+                camera->Yaw -= camera->mouse.MouseXOffset * camera->speed * SENSITIVITY;
+                camera->Pitch -= camera->mouse.MouseYOffset * camera->speed * SENSITIVITY;
+            }
+
 
             // Lock pitch at 120 degree
             if(camera->Pitch > 120.0f){

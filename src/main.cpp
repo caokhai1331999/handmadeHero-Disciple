@@ -351,7 +351,7 @@ int CALLBACK WinMain
                 }
                 glUseProgram(0);
 
-                //Set_environmental_light(BackBuffer.shaders_list[0], &envir_light, Chosen_Camera);
+                set_environmental_light(BackBuffer.shaders_list[0], &envir_light, Chosen_Camera);
                 //Set_environmental_light(&Game_Platform, &BackBuffer, BackBuffer.shaders_list[2], &envir_light, Chosen_Camera);
                 //Set_environmental_light(&Game_Platform, &BackBuffer, BackBuffer.shaders_list[3], &envir_light, Chosen_Camera);
                 set_environmental_light(BackBuffer.shaders_list[2], &envir_light, Chosen_Camera);

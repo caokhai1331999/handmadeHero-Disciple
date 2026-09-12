@@ -61,8 +61,9 @@ struct MouseInfo{
 };
 
 struct Camera{
-    bool moved;
-    bool focusCenter;
+    bool32 moved;
+    bool32 focusCenter;
+    bool32 move_perspective_instead;
 
     float LastFrameTime;    
     // Euler/Tait-Bryan angles

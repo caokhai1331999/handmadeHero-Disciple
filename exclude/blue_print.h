@@ -108,6 +108,36 @@ struct triangle{
     float size;
 };
 
+struct plane{
+    vertex top_left_point;
+    vertex top_right_point;
+    vertex bottom_left_point;
+    vertex bottom_right_point;
+
+    face_type_rhs face;
+    float size;
+    float vertices_data[??];
+};
+
+struct cube{
+    // What bind these face together. We need to come up with a formula to keep these in bound
+    plane front_face;
+    plane back_face;
+    plane left_face;
+    plane right_face;
+    plane top_face;
+    plane bottom_face;
+
+    float size;
+    float vertices_data[??];
+};
+
+struct voxel{
+    //NOTE: what contain inside this struct???: Pos, light,
+    voxel* first;
+    voxel* next;
+};
+
 struct default_plane_vertices{
     external float plane_vertices[] = {
         // positions
@@ -120,6 +150,62 @@ struct default_plane_vertices{
        -1.0f,  1.0f, 1.0f,  0.0f, 1.0f,                   
         1.0f,  1.0f, 1.0f,  1.0f, 1.0f,
         1.0f, -1.0f, 1.0f,  1.0f, 0.0f
+    };
+};
+
+struct default_cube_vertices{
+    float cube_vertices[] = {
+      //Position           //Normal           //TexCoords
+     -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
+      0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 0.0f,
+      0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
+      0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
+     -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 1.0f,
+     -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
+                                                           
+     -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f, 0.0f,
+      0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f, 1.0f,
+      0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f, 0.0f,
+      0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f, 1.0f,
+     -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f, 0.0f,
+     -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f, 1.0f,
+`     
+     -0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+     -0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+     -0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
+     -0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+     -0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+     -0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
+                                                           
+      0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+      0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
+      0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+      0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+      0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
+      0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+                                                           
+     -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f,
+      0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 0.0f,
+      0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 1.0f,
+      0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 0.0f,
+     -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f,
+     -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 0.0f,
+                                                           
+     -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
+      0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
+      0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+      0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+     -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
+     -0.5f,  0.5f, -0.5f   0.0f,  1.0f,  0.0f,  0.0f, 1.0f 
+    };
+
+    int cube_indices[] = {
+        0, 1, 2, 2, 4, 0,//0
+        6, 7, 8, 7, 6, 11,
+        12, 13, 14, 13, 12, 17,//2
+        18, 19, 20, 20, 22, 18,
+        24, 25, 26, 25, 24, 29,//4
+        30, 31, 32, 32, 34, 30
     };
 };
 
@@ -136,13 +222,6 @@ struct plane{
     index indices[6];
     // Should put it in here
     unsigned int texture;
-};
-// or we can store volumetric's data here
-struct cube{
-    vertex vertices[24];    
-    index indices[24];
-    float size;
-    //unsigned int texture;
 };
 
 //======================MESH_PART==========================
@@ -170,7 +249,7 @@ struct v3{
         };
     }    
 }
-// function
+
 inline v3
 v3 v3(float x_val, float y_val, float z_val){
     v3 result = {};
@@ -185,7 +264,7 @@ struct M_Mesh{
     // May be the Polygon or triangle to start
     // NOTE: Can we spawn other vertices from these first triangle/polygon one
     // There are two basic use cases: one is load vertices data from model(fbx, dae...), two is spawn one out
-    std::vector<vertex> vertices_data;
+    std::vector<vertex> vertices_data;// need to replace this if we choose cube as an only optimal option
     std::vector<plane>plane_group;
     //vertex* vertices;
     std::vector<unsigned int> indices_data;
@@ -324,15 +403,13 @@ struct entity_power_system{
 // NOTE: May be we need to do entity system in the lower level
 // replace them with the integer and do bitwise operator on them
 
-struct map_unit{ // when to use map_unit and when to use entity
-// This is just should be an entity
-    // store multiple vec3 is not cheap,we need to find the
-    // alternatives
-    // This is for choosing suitable mesh to draw
+// This may be drawn be simple shape or small model
+struct map_unit{ 
 // NOTE: These will be used for fectching data from graphic object
     uint8* vertices_data_id;
     uint8* texture_id;
     uint8* mesh_id;
+    // uint8* model_id;
     // This graphic_style will be supposed to replace all other ID if we did well .
     graphic_object_type graphic_type;// include light and shader type
     // model space shape vertices data(pos, textcoord, normal)
@@ -349,7 +426,7 @@ struct map_unit{ // when to use map_unit and when to use entity
 
 struct simple_volume_map{    
     // one is mesh type, the other is the position;
-    std::vector<map_unit>downground_content;
+    std::vector<map_unit>on_ground_entities;
     std::vector<map_unit>moving_obj_group;
     // the lowest layer of room is alway where the background object is
     // so from 0 -> length*breath contain the static object id

@@ -2721,3 +2721,6 @@ letter/glyph. why????
 NOTE: Actually the vertices pos of nearly stay the same except z value 
       - How can we draw a simple model from scratch and apply light on it
       without loading any model file.
+
+---------------- Sat, 12 Sep 26: 12:04PM
+
