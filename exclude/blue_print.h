@@ -114,7 +114,10 @@ struct plane{
     vertex bottom_left_point;
     vertex bottom_right_point;
 
+    float central_point_pos[3];
+    
     face_type_rhs face;
+    vertex vertices[4];
     float size;
     float vertices_data[??];
 };
@@ -123,12 +126,10 @@ struct cube{
     // What bind these face together. We need to come up with a formula to keep these in bound
     plane front_face;
     plane back_face;
-    plane left_face;
-    plane right_face;
-    plane top_face;
-    plane bottom_face;
 
+    float central_point_pos[3];
     float size;
+//NOTE: On Working
     float vertices_data[??];
 };
 
@@ -218,6 +219,7 @@ struct plane{
     // so the vertices will be 
     uint8 spaceID;
     float scale;
+
     vertex vertices[6];
     index indices[6];
     // Should put it in here
@@ -439,6 +441,12 @@ struct simple_volume_map{
     uint16 length;
 };
 
+struct Game_State{
+    std::vector<entity>entities;
+    std::vector<map_unit>map_objects;
+    uint8 current_room_id;
+    std::vector<simple_volume_map>world_map;
+};
 // We spawn/randomize new map everytime we change room
 // Think about this is the volume/room not the mere flat ground
 //

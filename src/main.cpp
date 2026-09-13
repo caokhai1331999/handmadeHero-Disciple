@@ -345,6 +345,10 @@ int CALLBACK WinMain
                     if(shader->GetProgramID()!=7){
                         shader->use();
                         shader->setMat4("view", Chosen_Camera->view);
+
+                        if(Chosen_Camera->move_perspective_instead)
+                            shader->setMat4("world_cube", Chosen_Camera->perspective_cube);
+
                         shader->setVec3( "ViewPos", Chosen_Camera->Position);
                         shader->setMat4("projection", Chosen_Camera->projection);
                     }

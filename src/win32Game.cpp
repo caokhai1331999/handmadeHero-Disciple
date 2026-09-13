@@ -1421,7 +1421,7 @@ LRESULT CALLBACK MainWindowCallBack(HWND Window, UINT Message, WPARAM Wparam, LP
       uint32 vkCode = Wparam;
       //if(vkCode = MK_LBUTTON){
       if(BackBuffer.camera.focusCenter){
-          if((GetKeyState(VK_CONTROL) & (1 << 15)) > 0){
+          if((GetKeyState(VK_LMENU) & (1 << 15)) > 0){
               // NOTE: grasp the whole perspective and move it instead of the camera
               if(!BackBuffer.camera.move_perspective_instead)
                   BackBuffer.camera.move_perspective_instead = true;

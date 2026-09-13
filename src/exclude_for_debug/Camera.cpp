@@ -47,11 +47,20 @@ void UpdateCamera (Camera* camera, float* DelayRatio) {
             camera->mouse.LastY = camera->mouse.yPos;        
 
             if(!camera->move_perspective_instead){
+                // rotate the whole perspective if possible
                 camera->Yaw += camera->mouse.MouseXOffset * camera->speed * SENSITIVITY;
                 camera->Pitch += camera->mouse.MouseYOffset * camera->speed * SENSITIVITY;
+ 
             }else{
-                camera->Yaw -= camera->mouse.MouseXOffset * camera->speed * SENSITIVITY;
-                camera->Pitch -= camera->mouse.MouseYOffset * camera->speed * SENSITIVITY;
+                camera->world_pitch -= camera->mouse.MouseXOffset * camera->speed * SENSITIVITY;
+                camera->world_yaw -= camera->mouse.MouseYOffset * camera->speed * SENSITIVITY;
+
+/*NOTE: On working
+  camera->perspective_cube = glm::rotate(perspective_cube, glm::vec3(0, 1, 0), camera->world_pitch);
+  camera->perspective_cube = glm::rotate(perspective_cube, glm::vec3(1, 0, 1), camera->world_yaw);
+*/
+                camera->perspective_cube = glm::rotate(camera->perspective_cube, camera->world_pitch, glm::vec3(0, 1, 0));
+                camera->perspective_cube = glm::rotate(camera->perspective_cube, camera->world_yaw, glm::vec3(1, 0, 1));
             }
 
 

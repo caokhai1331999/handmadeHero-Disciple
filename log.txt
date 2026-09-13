@@ -2724,3 +2724,7 @@ NOTE: Actually the vertices pos of nearly stay the same except z value
 
 ---------------- Sat, 12 Sep 26: 12:04PM
 
+
+---------------- Sun, 13 Sep 26: 11:22AM
+
+TODO: Try to finish the 

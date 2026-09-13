@@ -13,6 +13,7 @@ uniform vec3 lightPos;
 uniform vec3 pointLight_Pos[NR_POINT_LIGHTS];
 
 uniform mat4 model;
+uniform mat4 world_cube;
 uniform mat4 view;
 uniform mat4 projection;
 
@@ -32,8 +33,11 @@ out VS_OUT{
 void main()
 {
 
-    gl_Position = projection * view * model * vec4(-aPos, 1.0f);
-
+    if (world_cube[0][0] == 0)
+        gl_Position = projection * view * model * vec4(-aPos, 1.0f);
+    else
+        gl_Position = projection * view * world_cube * model * vec4(-aPos, 1.0f);
+    
     vec3 T = normalize(vec3(model * vec4(tangent, 0.0f)));
     vec3 N = normalize(vec3(model * vec4(aNormal, 0.0f)));
 

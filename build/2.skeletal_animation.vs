@@ -13,6 +13,7 @@ layout (location = 6) in vec4 weights;
 
 // uniform mat4 finalBoneMatrices [MAX_BONES];
 uniform mat4 model;
+uniform mat4 world_cube;
 uniform mat4 view;
 uniform mat4 projection;
 uniform mat4 WorldToCamera;
@@ -135,11 +136,26 @@ for (int i = 0; i < 4 ; i++){
      // Normal = vec3(transpose(inverse(WorldToCamera))) * aNormal;
      // Normal = vec3(transpose(inverse(WorldToCamera))) * aNormal;
 
-if(totalPosition != vec4(0.0f)){
-      gl_Position = projection * WorldToCamera * totalPosition;     
-}else{
-      gl_Position = projection * WorldToCamera * vec4(-aPos, 1.0f);     
+if (world_cube[0][0] == 0) {
+    if(totalPosition != vec4(0.0f)){
+        gl_Position = projection * WorldToCamera * totalPosition;
+    }else{
+        gl_Position = projection * WorldToCamera * vec4(-aPos, 1.0f);
+    }
+} else {
+    if(totalPosition != vec4(0.0f)){        
+        gl_Position = projection * WorldToCamera * world_cube * totalPosition;
+    } else {
+        gl_Position = projection * WorldToCamera * world_cube * vec4(-aPos, 1.0f);
+    }
 }
-    // gl_Position = projection * view * model * vec4(-aPos, 1.0f);
+/*
+if(totalPosition != vec4(0.0f)){
+    gl_Position = projection * WorldToCamera * totalPosition;     
+}else{
+    gl_Position = projection * WorldToCamera * vec4(-aPos, 1.0f);     
+}
+*/
+
 };
 

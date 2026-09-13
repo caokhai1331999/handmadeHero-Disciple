@@ -97,18 +97,6 @@ void turn_on_light(std::vector<general_light*>* light_group){
 }
 //======================LIGHT_PART==========================
 
-// We can replay game by thanks to this struct
-struct game_state{
-    void* BitmapMemory;
-    int BitmapWidth;
-    int BitmapHeight;
-    int Pitch;
-    int BitmapMemorySize;
-// One pit of performance to use this one
-    // be careful
-    std::vector<C_Model*>Model_Collection;    
-};
-
 // ====================== Map constructing ===================================
 
 // ZII(Zero Initializtion) is good

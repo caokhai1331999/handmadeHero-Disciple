@@ -16,6 +16,7 @@ uniform vec3 insertColor;
 uniform vec3 ViewPos;
 
 uniform mat4 view;
+uniform mat4 world_cube;
 uniform mat4 model;
 uniform mat4 projection;
 
@@ -47,8 +48,13 @@ void main(){
        // FragPos = vec3(aTextCoord.x * modelPos.x, aPos.y, aTextCoord.y * modelPos.z); 
        FragPos = modelPos; 
 
+
+    if (world_cube[0][0] == 0)
        gl_Position = projection * view * vec4(vec3(aPos.x + offset.x, aPos.y, aPos.z + offset.y), 1.0f);
-       ViewPos_ = ViewPos;
+    else
+       gl_Position = projection * view * world_cube * vec4(vec3(aPos.x + offset.x, aPos.y, aPos.z + offset.y), 1.0f);
+
+    ViewPos_ = ViewPos;
        TextCoord = aTextCoord;
        FragColorr = vec4(VertexColor,1.0f);
 }

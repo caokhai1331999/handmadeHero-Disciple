@@ -63,12 +63,18 @@ struct MouseInfo{
 struct Camera{
     bool32 moved;
     bool32 focusCenter;
+
     bool32 move_perspective_instead;
+
+    float world_pitch;
+    float world_yaw;
 
     float LastFrameTime;    
     // Euler/Tait-Bryan angles
     float Pitch;
     float Yaw;
+
+    glm::mat4 perspective_cube;// this one for rotating the whole scene in one grasp
     glm::quat orientation;
     //float Roll;// May be this one is unecessary
 
@@ -110,12 +116,16 @@ struct Camera{
         Pitch = PITCH;
         Yaw = YAW;
 
+        world_pitch = PITCH;
+        world_yaw = YAW;
+
         focusCenter = false;
         moved = false;
         sentivity = 0.1f;
         LastFrameTime = 0.0f;
 
-        speed = 2.5f;        
+        speed = 2.5f;
+        perspective_cube = glm::mat4(1.0f);
         mouse = MouseInfo(0, 0, ScreenWidth, ScreenHeight);
     }
 };
